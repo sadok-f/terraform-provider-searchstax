@@ -17,8 +17,8 @@ command -v terraform >/dev/null 2>&1 || test -n "${TF_ACC_TERRAFORM_PATH:-}" || 
 docker pull sadokf/searchstax-mock-api
 
 export SEARCHSTAX_HOST=http://localhost:3000/api/rest/v2
-export SEARCHSTAX_USERNAME=testUSERNAME
-export SEARCHSTAX_PASSWORD=testPWD
+export SEARCHSTAX_USERNAME=test_username@example.com
+export SEARCHSTAX_PASSWORD=testSupperPWD
 
 
 docker run -d \

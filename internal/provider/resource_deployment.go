@@ -59,6 +59,10 @@ func (d *deploymentResource) Metadata(_ context.Context, req resource.MetadataRe
 func (d *deploymentResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
+			// id is required by the testing framework
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
 			"account_name": schema.StringAttribute{
 				Required: true,
 				PlanModifiers: []planmodifier.String{
@@ -233,6 +237,7 @@ func (d *deploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	// Map response body to schema and populate Computed attribute values
+	plan.ID = types.StringValue("placeholder")
 	plan.UID = types.StringValue(deployment.UID)
 	plan.CloudProvider = types.StringValue(deployment.CloudProvider)
 	plan.DateCreated = types.StringValue(deployment.DateCreated)
@@ -277,6 +282,7 @@ func (d *deploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	// Overwrite items with refreshed state
+	state.ID = types.StringValue("placeholder")
 	state.UID = types.StringValue(deployment.UID)
 	state.Name = types.StringValue(deployment.Name)
 	state.Application = types.StringValue(deployment.Application)
@@ -321,6 +327,7 @@ func (d *deploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 	// if we're changing only the PrivateVPC, then update the state and return
 	// this is a WORKAROUND until the API returns a private_vpc id as well
 	if plan.PrivateVpc.ValueInt64() != 0 {
+		plan.ID = types.StringValue("placeholder")
 		diags = resp.State.Set(ctx, plan)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
@@ -364,6 +371,7 @@ func (d *deploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	// Overwrite items with refreshed state
+	plan.ID = types.StringValue("placeholder")
 	plan.UID = types.StringValue(deployment.UID)
 	plan.CloudProvider = types.StringValue(deployment.CloudProvider)
 	plan.DateCreated = types.StringValue(deployment.DateCreated)
@@ -425,6 +433,7 @@ func (d *deploymentResource) ImportState(ctx context.Context, req resource.Impor
 
 // deploymentModel maps deployment schema data.
 type deploymentModel struct {
+	ID                    types.String `tfsdk:"id"`
 	AccountName           types.String `tfsdk:"account_name"`
 	UID                   types.String `tfsdk:"uid"`
 	Name                  types.String `tfsdk:"name"`
