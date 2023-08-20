@@ -79,12 +79,14 @@ To compile the provider, run `go install`. This will build the provider and put 
 
 To generate or update documentation, run `go generate`.
 
-In order to run the full suite of Acceptance tests, run `make testacc`.
+### Acceptance tests
 
 *Note:* Acceptance tests runs on a SearchStax mock api server created by this [Repo](https://github.com/sadok-f/searchstax-mock-api), it returns a mocking response for each API call.
 
+In order to run the full suite of Acceptance tests, run: 
+
 ```shell
-make testacc
+./internal/provider/acceptance.sh
 ```
 
 ### Testing the provider locally with a debugger
@@ -101,4 +103,5 @@ TF_REATTACH_PROVIDERS=... terraform init
 TF_REATTACH_PROVIDERS=... terraform apply
 ```
 
+More details about running a terraform provider with a debugger:
 [https://opencredo.com/blogs/running-a-terraform-provider-with-a-debugger/](https://opencredo.com/blogs/running-a-terraform-provider-with-a-debugger/)
