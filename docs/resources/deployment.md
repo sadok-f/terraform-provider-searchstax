@@ -38,6 +38,7 @@ description: |-
 - `date_created` (String)
 - `deployment_type` (String)
 - `http_endpoint` (String)
+- `id` (String) The ID of this resource.
 - `is_master_slave` (Boolean)
 - `num_nodes_default` (Number)
 - `provision_state` (String)
