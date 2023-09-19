@@ -113,6 +113,9 @@ func (d *deploymentResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"private_vpc": schema.Int64Attribute{
 				Optional: true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"uid": schema.StringAttribute{
 				Computed: true,
