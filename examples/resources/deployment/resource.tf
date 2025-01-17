@@ -14,7 +14,7 @@ variable "ssx_pwd" {
 }
 
 variable "account_name" {
-  type    = string
+  type = string
 }
 
 variable "private_vpc_name" {
