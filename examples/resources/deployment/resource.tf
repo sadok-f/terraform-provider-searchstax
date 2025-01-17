@@ -14,8 +14,7 @@ variable "ssx_pwd" {
 }
 
 variable "account_name" {
-  type    = string
-  default = "account_nameocp"
+  type = string
 }
 
 variable "private_vpc_name" {
