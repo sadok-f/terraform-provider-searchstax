@@ -99,7 +99,7 @@ func (c *Client) CreateDeployment(deployment Deployment, accountName string) (*D
 		if err != nil {
 			return nil, &Error{
 				err:     err,
-				context: "GetDeployment",
+				context: "GetDeploymentStatus",
 			}
 		}
 
@@ -108,6 +108,13 @@ func (c *Client) CreateDeployment(deployment Deployment, accountName string) (*D
 			newDeployment.ProvisionState = dep.ProvisionState
 			newDeployment.HttpEndpoint = dep.HttpEndpoint
 			break
+		}
+		if dep.Status == "Failed" {
+			err := fmt.Errorf("operation failed with status: %s", dep.Status)
+			return nil, &Error{
+				err:     err,
+				context: "GetDeploymentStatus",
+			}
 		}
 
 		time.Sleep(time.Minute)

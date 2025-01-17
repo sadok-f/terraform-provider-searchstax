@@ -53,6 +53,7 @@ provider_installation {
 
 Your `<PATH>` may vary depending on how your Go environment variables are configured. Execute `go env GOBIN` to set it, then set the `<PATH>` to the value returned. If nothing is returned, set it to the default location, `$HOME/go/bin`.
 
+> Skip terraform init when using provider development overrides. It is not necessary and may error unexpectedly.
 
 ## Using the provider
 
@@ -105,3 +106,17 @@ TF_REATTACH_PROVIDERS=... terraform apply
 
 More details about running a terraform provider with a debugger:
 [https://opencredo.com/blogs/running-a-terraform-provider-with-a-debugger/](https://opencredo.com/blogs/running-a-terraform-provider-with-a-debugger/)
+
+### Todo
+
+#### Data source 
+- [x] Deployment
+- [ ] Deployment User
+- [ ] User
+- [x] Private VPC
+
+### Resource
+- [x] Deployment
+- [ ] Deployment User
+- [ ] User
+- [ ] Private VPC

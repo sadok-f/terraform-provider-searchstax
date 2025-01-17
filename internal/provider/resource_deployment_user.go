@@ -102,7 +102,7 @@ func (d *deploymentUserResource) Create(ctx context.Context, req resource.Create
 	var item = searchstaxClient.DeploymentUser{
 		Username: plan.Username.ValueString(),
 		Password: plan.Password.ValueString(),
-		Roles:    plan.Role.ValueString(),
+		Role:     plan.Role.ValueString(),
 	}
 
 	// Create new deployment
@@ -120,7 +120,7 @@ func (d *deploymentUserResource) Create(ctx context.Context, req resource.Create
 	plan.UID = types.StringValue(deploymentUser.UID)
 	plan.Username = types.StringValue(deploymentUser.Username)
 	plan.Password = types.StringValue(deploymentUser.Password)
-	plan.Role = types.StringValue(deploymentUser.Roles)
+	plan.Role = types.StringValue(deploymentUser.Role)
 
 	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)

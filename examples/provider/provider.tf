@@ -1,3 +1,3 @@
-provider "scaffolding" {
+provider "searchStax" {
   # example configuration here
 }
