@@ -4,13 +4,16 @@ name: Tests
 # This GitHub action runs your tests for each pull request and push.
 # Optionally, you can turn it on using a schedule for regular testing.
 on:
-  pull_request:
-    paths-ignore:
-      - 'README.md'
   push:
     paths-ignore:
       - 'README.md'
-
+    branches:
+      - main
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+    branches:
+      - main
 # Testing only needs permissions to read the repository contents.
 permissions:
   contents: read
@@ -42,7 +45,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
-      - run: sudo apt-get update && sudo apt-get install -y gnupg software-properties-common && sudo apt install terraform
+      - run: snap install terraform
       - run: go generate ./...
       - name: git diff
         run: |
