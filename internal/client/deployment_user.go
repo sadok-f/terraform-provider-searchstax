@@ -77,8 +77,8 @@ func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName
 	}
 
 	var newDeploymentUserResponse struct {
-		success bool
-		message string
+		Success bool   `json:"success"`
+		Message string `json:"message"`
 	}
 	err = json.Unmarshal(body, &newDeploymentUserResponse)
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName
 		}
 	}
 
-	if newDeploymentUserResponse.success {
+	if newDeploymentUserResponse.Success {
 		return &deploymentUser, nil
 	}
 

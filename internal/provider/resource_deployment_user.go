@@ -268,7 +268,6 @@ func (d *deploymentUserResource) Delete(ctx context.Context, req resource.Delete
 
 // ImportState - Import existing deployment cluster into terraform state.
 func (d *deploymentUserResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	return
 	//idParts := strings.Split(req.ID, "/")
 	//
 	//if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
