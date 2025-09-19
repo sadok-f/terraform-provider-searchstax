@@ -9,7 +9,7 @@ linters:
   enable:
     - durationcheck
     - errcheck
-    - exportloopref
+    - copyloopvar  # Replaces exportloopref (deprecated since Go 1.22)
     - forcetypeassert
     - godot
     - gofmt
@@ -20,8 +20,8 @@ linters:
     - nilerr
     - predeclared
     - staticcheck
-    - tenv
+    - usetesting  # Replaces tenv (deprecated since v1.64.0)
     - unconvert
     - unparam
     - unused
-    - vet
+    - govet  # Replaces vet (deprecated)
