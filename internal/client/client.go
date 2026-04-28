@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -59,6 +60,12 @@ func NewClient(host, username, password *string) (*Client, error) {
 	c.Token = ar.Token
 
 	return &c, nil
+}
+
+// RestHostURL returns the /api/rest base used by a subset of endpoints
+// such as /users/* in the mock API.
+func (c *Client) RestHostURL() string {
+	return strings.Replace(c.HostURL, "/api/rest/v2", "/api/rest", 1)
 }
 
 // doRequest - send the Request.

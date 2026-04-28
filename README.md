@@ -15,7 +15,7 @@ The code is still **WIP** and not published yet to the Terraform registry.
 ## Requirements
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.20
+- [Go](https://golang.org/doc/install) >= 1.25
 
 ## Building SearchStax Provider locally
 
@@ -107,16 +107,33 @@ TF_REATTACH_PROVIDERS=... terraform apply
 More details about running a terraform provider with a debugger:
 [https://opencredo.com/blogs/running-a-terraform-provider-with-a-debugger/](https://opencredo.com/blogs/running-a-terraform-provider-with-a-debugger/)
 
-### Todo
+### Implemented Domains
 
-#### Data source 
-- [x] Deployment
-- [ ] Deployment User
-- [ ] User
-- [x] Private VPC
+Data sources currently implemented:
+- `searchstax_auth_token`
+- `searchstax_deployments`
+- `searchstax_deployment_users`
+- `searchstax_private_vpc`
+- `searchstax_users`
+- `searchstax_dns_records`
+- `searchstax_ip_filters`
+- `searchstax_custom_jars`
+- `searchstax_tags`
+- `searchstax_alert_metrics`
+- `searchstax_webhooks`
+- `searchstax_zookeeper_configs`
+- `searchstax_deployment_backups`
 
-### Resource
-- [x] Deployment
-- [ ] Deployment User
-- [ ] User
-- [ ] Private VPC
+Resources currently implemented:
+- `searchstax_auth_session`
+- `searchstax_deployment`
+- `searchstax_deployment_user`
+- `searchstax_user`
+- `searchstax_dns_record`
+- `searchstax_ip_filter`
+- `searchstax_custom_jar`
+- `searchstax_tags_set`
+- `searchstax_alert`
+- `searchstax_webhook`
+- `searchstax_zookeeper_config`
+- `searchstax_deployment_backup`

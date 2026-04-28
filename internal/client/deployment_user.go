@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// GetDeploymentUsers - Returns list of datasources (no auth required).
+// GetDeploymentUsers returns the list of Solr Basic Auth users for a deployment.
 func (c *Client) GetDeploymentUsers(accountName string, deploymentID string) (*DeploymentUsersList, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/get-users/", c.HostURL, accountName, deploymentID), nil)
 	if err != nil {
@@ -29,28 +29,24 @@ func (c *Client) GetDeploymentUsers(accountName string, deploymentID string) (*D
 	return &deploymentUsers, nil
 }
 
-// GetDeploymentUser - Returns details of a Deployment User.
+// GetDeploymentUser returns details of a specific Solr Basic Auth user.
+//
+// The mock API does not expose a per-user read endpoint; we filter from the list.
 func (c *Client) GetDeploymentUser(accountName string, deploymentID string, username string) (*DeploymentUser, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/get-users/", c.HostURL, accountName, deploymentID), nil)
+	users, err := c.GetDeploymentUsers(accountName, deploymentID)
 	if err != nil {
 		return nil, err
 	}
-
-	body, err := c.doRequest(req)
-	if err != nil {
-		return nil, err
+	for _, u := range users.Results {
+		if u.Username == username {
+			found := u
+			return &found, nil
+		}
 	}
-
-	deploymentUser := DeploymentUser{}
-	err = json.Unmarshal(body, &deploymentUser)
-	if err != nil {
-		return nil, err
-	}
-
-	return &deploymentUser, nil
+	return nil, fmt.Errorf("deployment user %q not found", username)
 }
 
-// CreateDeploymentUser - Create new deployment User.
+// CreateDeploymentUser creates a new Solr Basic Auth user for the deployment.
 func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName string, deploymentID string) (*DeploymentUser, *Error) {
 	rb, err := json.Marshal(deploymentUser)
 	if err != nil {
@@ -60,7 +56,7 @@ func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName
 		}
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/add-user", c.HostURL, accountName, deploymentID), strings.NewReader(string(rb)))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/add-user/", c.HostURL, accountName, deploymentID), strings.NewReader(string(rb)))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -76,11 +72,10 @@ func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName
 		}
 	}
 
-	var newDeploymentUserResponse struct {
-		Success bool   `json:"success"`
-		Message string `json:"message"`
+	var createResp struct {
+		Created bool `json:"created"`
 	}
-	err = json.Unmarshal(body, &newDeploymentUserResponse)
+	err = json.Unmarshal(body, &createResp)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -88,17 +83,17 @@ func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName
 		}
 	}
 
-	if newDeploymentUserResponse.Success {
+	if createResp.Created {
 		return &deploymentUser, nil
 	}
 
 	return nil, &Error{
-		err:     err,
-		context: "onCreateDeploymentUser",
+		err:     fmt.Errorf("deployment user not created"),
+		context: "CreateDeploymentUser",
 	}
 }
 
-// UpdateDeploymentUser -Update a deployment: for now it recreate the cluster.
+// UpdateDeploymentUser updates a deployment user by deleting then re-adding.
 func (c *Client) UpdateDeploymentUser(accountName string, deploymentID string, deploymentUser DeploymentUser) (*DeploymentUser, *Error) {
 	err := c.DeleteDeploymentUser(accountName, deploymentID, deploymentUser.Username)
 	if err != nil {
@@ -119,7 +114,7 @@ func (c *Client) UpdateDeploymentUser(accountName string, deploymentID string, d
 	return newDeployment, nil
 }
 
-// DeleteDeploymentUser -Delete a specific deployment user.
+// DeleteDeploymentUser deletes a deployment user.
 func (c *Client) DeleteDeploymentUser(accountName string, deploymentID string, username string) *Error {
 	userToDelete, err := json.Marshal(map[string]interface{}{
 		"username": username,
@@ -155,6 +150,13 @@ func (c *Client) DeleteDeploymentUser(accountName string, deploymentID string, u
 			err:     err,
 		}
 	}
+	// mock returns {"deleted": true}
+	var deleteResp struct {
+		Deleted bool `json:"deleted"`
+	}
+	if err := json.Unmarshal(body, &deleteResp); err == nil && deleteResp.Deleted {
+		return nil
+	}
 	if apiResponse.Success != "true" {
 		return &Error{
 			err:     fmt.Errorf("%s", apiResponse.Message),
@@ -177,16 +179,14 @@ func (c *Client) DeleteDeploymentUser(accountName string, deploymentID string, u
 	}
 }
 
-// DeploymentUsersList - DeploymentUsersList struct.
+// DeploymentUsersList represents the list payload for basic auth users.
 type DeploymentUsersList struct {
-	Success bool             `json:"success"`
-	Users   []DeploymentUser `json:"users"`
+	Results []DeploymentUser `json:"results"`
 }
 
-// DeploymentUser - DeploymentUser struct.
+// DeploymentUser represents a basic auth user.
 type DeploymentUser struct {
-	UID      string `json:"UID"`
-	Username string `json:"Username"`
-	Password string `json:"Password"`
-	Role     string `json:"Roles"`
+	Username string `json:"username"`
+	Password string `json:"password,omitempty"`
+	Role     string `json:"role"`
 }

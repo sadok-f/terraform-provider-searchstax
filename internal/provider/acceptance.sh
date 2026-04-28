@@ -2,7 +2,7 @@ set -eu
 set -x
 
 cleanup_docker() {
-	docker stop mock-api
+	docker stop mock-api >/dev/null 2>&1 || true
 }
 failed() {
 	cleanup_docker
@@ -14,7 +14,9 @@ command -v go >/dev/null 2>&1 || { echo >&2 "go command not installed or in PATH
 command -v make >/dev/null 2>&1 || { echo >&2 "make command not installed or in PATH"; exit 1; }
 command -v terraform >/dev/null 2>&1 || test -n "${TF_ACC_TERRAFORM_PATH:-}" || { echo >&2 "terraform command not installed or in PATH, TF_ACC_TERRAFORM_PATH not set"; exit 1; }
 
-docker pull sadokf/searchstax-mock-api
+trap cleanup_docker EXIT
+
+docker pull sadokf/searchstax-mock-api:latest
 
 export SEARCHSTAX_HOST=http://localhost:3000/api/rest/v2
 export SEARCHSTAX_USERNAME=test_username@example.com
@@ -23,7 +25,7 @@ export SEARCHSTAX_PASSWORD=testSupperPWD
 
 docker run -d \
 	-p 127.0.0.1:3000:3000 \
-	--rm --name mock-api  sadokf/searchstax-mock-api || failed
+	--rm --name mock-api  sadokf/searchstax-mock-api:latest || failed
 GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
 

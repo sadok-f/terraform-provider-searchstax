@@ -181,14 +181,36 @@ func (p *searchstaxProvider) Configure(ctx context.Context, req provider.Configu
 // DataSources defines the data sources implemented in the provider.
 func (p *searchstaxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewAlertMetricsDataSource,
+		NewAuthTokenDataSource,
+		NewCustomJarsDataSource,
+		NewDeploymentBackupsDataSource,
 		NewDeploymentsDataSource,
+		NewDeploymentUsersDataSource,
+		NewDNSRecordsDataSource,
+		NewIPFiltersDataSource,
 		NewPrivateVpcDataSource,
+		NewTagsDataSource,
+		NewUsersDataSource,
+		NewWebhooksDataSource,
+		NewZookeeperConfigsDataSource,
 	}
 }
 
 // Resources defines the resources implemented in the provider.
 func (p *searchstaxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewAlertResource,
+		NewAuthSessionResource,
+		NewCustomJarResource,
+		NewDeploymentBackupResource,
 		NewDeploymentResource,
+		NewDeploymentUserResource,
+		NewDNSRecordResource,
+		NewIPFilterResource,
+		NewTagsResource,
+		NewUserResource,
+		NewWebhookResource,
+		NewZookeeperConfigResource,
 	}
 }
