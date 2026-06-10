@@ -1,7 +1,6 @@
 resource "searchstax_dns_record" "example" {
-  account_name = var.account_name
+  account_name = "my_account"
   name         = "myalias"
-  deployment   = var.deployment_uid
+  deployment   = "ss123456"
   ttl          = "300"
 }
-
