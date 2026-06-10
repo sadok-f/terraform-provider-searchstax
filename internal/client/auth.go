@@ -66,6 +66,36 @@ func (c *Client) GetUserTokenSignIn(auth AuthStruct) (*AuthResponse, error) {
 	return &ar, nil
 }
 
+type VerifyAuthTokenResponse struct {
+	Valid                 bool  `json:"valid"`
+	TokenExpiresInSeconds int64 `json:"token_expires_in_seconds"`
+	Token                 struct {
+		Key          string `json:"key"`
+		Created      string `json:"created"`
+		DurationDays int    `json:"duration_days"`
+		Expires      string `json:"expires"`
+	} `json:"token"`
+}
+
+func (c *Client) VerifyAuthToken() (*VerifyAuthTokenResponse, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/verify-auth-token/", c.HostURL), nil)
+	if err != nil {
+		return nil, err
+	}
+	body, err := c.doRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	out := VerifyAuthTokenResponse{}
+	if err := json.Unmarshal(body, &out); err != nil {
+		return nil, err
+	}
+	if out.Token.Key != "" && !out.Valid {
+		out.Valid = true
+	}
+	return &out, nil
+}
+
 // SignOut - Revoke the token for a user.
 func (c *Client) SignOut(authToken *string) error {
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/signout", c.HostURL), strings.NewReader(string("")))

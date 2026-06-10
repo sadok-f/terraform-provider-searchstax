@@ -70,7 +70,8 @@ func (r *customJarResource) Read(ctx context.Context, req resource.ReadRequest, 
 			return
 		}
 	}
-	resp.State.RemoveResource(ctx)
+	state.ID = types.StringValue(state.AccountName.ValueString() + "/" + state.DeploymentUID.ValueString() + "/" + state.Name.ValueString())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 func (r *customJarResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
 }

@@ -21,8 +21,11 @@ func (d *authTokenDataSource) Metadata(_ context.Context, req datasource.Metadat
 
 func (d *authTokenDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{Attributes: map[string]schema.Attribute{
-		"id":    schema.StringAttribute{Computed: true},
-		"token": schema.StringAttribute{Computed: true, Sensitive: true},
+		"id":                     schema.StringAttribute{Computed: true},
+		"token":                  schema.StringAttribute{Computed: true, Sensitive: true},
+		"valid":                  schema.BoolAttribute{Computed: true},
+		"expires_in_seconds":     schema.Int64Attribute{Computed: true},
+		"token_expires_at":       schema.StringAttribute{Computed: true},
 	}}
 }
 
@@ -44,12 +47,27 @@ func (d *authTokenDataSource) Read(ctx context.Context, _ datasource.ReadRequest
 		resp.Diagnostics.AddError("Unable to obtain SearchStax auth token", err.Error())
 		return
 	}
-	state := struct {
-		ID    types.String `tfsdk:"id"`
-		Token types.String `tfsdk:"token"`
-	}{
+	state := authTokenDataSourceModel{
 		ID:    types.StringValue("placeholder"),
 		Token: types.StringValue(token.Token),
 	}
+	verify, err := d.client.VerifyAuthToken()
+	if err == nil {
+		state.Valid = types.BoolValue(verify.Valid)
+		if verify.TokenExpiresInSeconds > 0 {
+			state.ExpiresInSeconds = types.Int64Value(verify.TokenExpiresInSeconds)
+		}
+		if verify.Token.Expires != "" {
+			state.TokenExpiresAt = types.StringValue(verify.Token.Expires)
+		}
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+type authTokenDataSourceModel struct {
+	ID               types.String `tfsdk:"id"`
+	Token            types.String `tfsdk:"token"`
+	Valid            types.Bool   `tfsdk:"valid"`
+	ExpiresInSeconds types.Int64  `tfsdk:"expires_in_seconds"`
+	TokenExpiresAt   types.String `tfsdk:"token_expires_at"`
 }

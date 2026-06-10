@@ -72,7 +72,8 @@ func (r *deploymentBackupResource) Read(ctx context.Context, req resource.ReadRe
 			return
 		}
 	}
-	resp.State.RemoveResource(ctx)
+	state.ID = types.StringValue(state.AccountName.ValueString() + "/" + state.DeploymentUID.ValueString() + "/" + state.BackupID.ValueString())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 func (r *deploymentBackupResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
 }

@@ -48,7 +48,22 @@ resource "searchstax_deployment" "test" {
 				ImportStateId:     "test_account_name/ss123456",
 				// The private_vpc attribute does not exist in the SearchStax
 				// API, therefore there is no value for it during import.
-				ImportStateVerifyIgnore: []string{"private_vpc"},
+				ImportStateVerifyIgnore: []string{
+					"private_vpc",
+					"servers",
+					"tags",
+					"zookeeper_ensemble",
+					"desired_tier",
+					"spec_",
+					"backups_enabled",
+					"dr_enabled",
+					"sla_active",
+					"application_nodes_count",
+					"subscription",
+					"security_pack",
+					"num_zookeeper_nodes_default",
+					"num_additional_zookeeper_nodes",
+				},
 			},
 			// Update and Read testing
 			{

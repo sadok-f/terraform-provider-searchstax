@@ -17,5 +17,8 @@ description: |-
 
 ### Read-Only
 
+- `expires_in_seconds` (Number)
 - `id` (String) The ID of this resource.
 - `token` (String, Sensitive)
+- `token_expires_at` (String)
+- `valid` (Boolean)

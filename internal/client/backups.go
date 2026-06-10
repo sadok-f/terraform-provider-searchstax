@@ -155,7 +155,13 @@ type BackupSchedulesList struct {
 }
 
 type BackupSchedule struct {
-	ID string `json:"id,omitempty"`
+	ID          string   `json:"id,omitempty"`
+	Days        []string `json:"days,omitempty"`
+	Time        string   `json:"time,omitempty"`
+	Retention   int      `json:"retention,omitempty"`
+	Frequency   int      `json:"frequency,omitempty"`
+	RegionID    string   `json:"region_id,omitempty"`
+	Collections []string `json:"collections,omitempty"`
 }
 
 func (c *Client) GetBackupSchedules(accountName, deploymentID string) (*BackupSchedulesList, error) {

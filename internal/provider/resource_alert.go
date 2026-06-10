@@ -73,6 +73,11 @@ func (r *alertResource) Read(ctx context.Context, req resource.ReadRequest, resp
 			return
 		}
 	}
+	if state.AlertID.ValueInt64() != 0 {
+		state.ID = types.StringValue(state.AccountName.ValueString() + "/" + state.DeploymentUID.ValueString() + "/" + strconv.FormatInt(state.AlertID.ValueInt64(), 10))
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
+	}
 	resp.State.RemoveResource(ctx)
 }
 func (r *alertResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {

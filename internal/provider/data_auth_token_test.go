@@ -14,6 +14,8 @@ func TestAccAuthTokenDataSource(t *testing.T) {
 				Config: providerConfig + `data "searchstax_auth_token" "test" {}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.searchstax_auth_token.test", "token"),
+					resource.TestCheckResourceAttr("data.searchstax_auth_token.test", "valid", "true"),
+					resource.TestCheckResourceAttrSet("data.searchstax_auth_token.test", "expires_in_seconds"),
 				),
 			},
 		},

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -200,7 +201,98 @@ func (d *deploymentResource) Schema(_ context.Context, _ resource.SchemaRequest,
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			//TODO to list all missing attributes
+			"num_zookeeper_nodes_default": schema.Int64Attribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
+			},
+			"num_additional_zookeeper_nodes": schema.Int64Attribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
+			},
+			"servers": schema.ListAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"zookeeper_ensemble": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"tags": schema.ListAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"spec_jvm_heap_memory": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"spec_disk_space": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"spec_physical_memory": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"backups_enabled": schema.BoolAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"dr_enabled": schema.BoolAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"sla_active": schema.BoolAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"application_nodes_count": schema.Int64Attribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
+			},
+			"subscription": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"security_pack": schema.BoolAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"desired_tier": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -241,20 +333,10 @@ func (d *deploymentResource) Create(ctx context.Context, req resource.CreateRequ
 
 	// Map response body to schema and populate Computed attribute values
 	plan.ID = types.StringValue("placeholder")
-	plan.UID = types.StringValue(deployment.UID)
-	plan.CloudProvider = types.StringValue(deployment.CloudProvider)
-	plan.DateCreated = types.StringValue(deployment.DateCreated)
-	plan.DeploymentType = types.StringValue(deployment.DeploymentType)
-	plan.HttpEndpoint = types.StringValue(deployment.HttpEndpoint)
-	plan.IsMasterSlave = types.BoolValue(deployment.IsMasterSlave)
-	plan.NumNodesDefault = types.Int64Value(deployment.NumNodesDefault)
-	plan.ProvisionState = types.StringValue(deployment.ProvisionState)
-	plan.Status = types.StringValue(deployment.Status)
-	plan.Tier = types.StringValue(deployment.Tier)
-	plan.VpcName = types.StringValue(deployment.VpcName)
-	plan.VpcType = types.StringValue(deployment.VpcType)
-	plan.RegionId = types.StringValue(deployment.RegionId)
-	plan.NumAdditionalAppNodes = types.Int64Value(deployment.NumAdditionalAppNodes)
+	resp.Diagnostics.Append(populateDeploymentResourceModel(ctx, &plan, *deployment)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)
@@ -286,28 +368,10 @@ func (d *deploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	// Overwrite items with refreshed state
 	state.ID = types.StringValue("placeholder")
-	state.UID = types.StringValue(deployment.UID)
-	state.Name = types.StringValue(deployment.Name)
-	state.Application = types.StringValue(deployment.Application)
-	state.ApplicationVersion = types.StringValue(deployment.ApplicationVersion)
-	state.Tier = types.StringValue(deployment.Tier)
-	state.HttpEndpoint = types.StringValue(deployment.HttpEndpoint)
-	state.Status = types.StringValue(deployment.Status)
-	state.ProvisionState = types.StringValue(deployment.ProvisionState)
-	state.PlanType = types.StringValue(deployment.PlanType)
-	state.Plan = types.StringValue(deployment.Plan)
-	state.CloudProvider = types.StringValue(deployment.CloudProvider)
-	state.CloudProviderId = types.StringValue(deployment.CloudProviderId)
-	state.NumAdditionalAppNodes = types.Int64Value(deployment.NumAdditionalAppNodes)
-	state.NumNodesDefault = types.Int64Value(deployment.NumNodesDefault)
-	state.IsMasterSlave = types.BoolValue(deployment.IsMasterSlave)
-	state.VpcName = types.StringValue(deployment.VpcName)
-	state.VpcType = types.StringValue(deployment.VpcType)
-	state.RegionId = types.StringValue(deployment.RegionId)
-	state.TerminationLock = types.BoolValue(deployment.TerminationLock)
-	state.DateCreated = types.StringValue(deployment.DateCreated)
-	state.DeploymentType = types.StringValue(deployment.DeploymentType)
-	//TODO list the rest of attributes
+	resp.Diagnostics.Append(populateDeploymentResourceModel(ctx, &state, *deployment)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set refreshed state
 	diags = resp.State.Set(ctx, &state)
@@ -375,21 +439,10 @@ func (d *deploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	// Overwrite items with refreshed state
 	plan.ID = types.StringValue("placeholder")
-	plan.UID = types.StringValue(deployment.UID)
-	plan.CloudProvider = types.StringValue(deployment.CloudProvider)
-	plan.DateCreated = types.StringValue(deployment.DateCreated)
-	plan.DeploymentType = types.StringValue(deployment.DeploymentType)
-	plan.HttpEndpoint = types.StringValue(deployment.HttpEndpoint)
-	plan.IsMasterSlave = types.BoolValue(deployment.IsMasterSlave)
-	plan.NumNodesDefault = types.Int64Value(deployment.NumNodesDefault)
-	plan.NumAdditionalAppNodes = types.Int64Value(deployment.NumAdditionalAppNodes)
-	plan.ProvisionState = types.StringValue(deployment.ProvisionState)
-	plan.Status = types.StringValue(deployment.Status)
-	plan.Tier = types.StringValue(deployment.Tier)
-	plan.VpcName = types.StringValue(deployment.VpcName)
-	plan.VpcType = types.StringValue(deployment.VpcType)
-	plan.VpcType = types.StringValue(deployment.VpcType)
-	//TODO list the rest of attributes
+	resp.Diagnostics.Append(populateDeploymentResourceModel(ctx, &plan, *deployment)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -436,28 +489,43 @@ func (d *deploymentResource) ImportState(ctx context.Context, req resource.Impor
 
 // deploymentModel maps deployment schema data.
 type deploymentModel struct {
-	ID                    types.String `tfsdk:"id"`
-	AccountName           types.String `tfsdk:"account_name"`
-	UID                   types.String `tfsdk:"uid"`
-	Name                  types.String `tfsdk:"name"`
-	Application           types.String `tfsdk:"application"`
-	ApplicationVersion    types.String `tfsdk:"application_version"`
-	TerminationLock       types.Bool   `tfsdk:"termination_lock"`
-	PlanType              types.String `tfsdk:"plan_type"`
-	Plan                  types.String `tfsdk:"plan"`
-	RegionId              types.String `tfsdk:"region_id"`
-	CloudProvider         types.String `tfsdk:"cloud_provider"`
-	CloudProviderId       types.String `tfsdk:"cloud_provider_id"`
-	NumAdditionalAppNodes types.Int64  `tfsdk:"num_additional_app_nodes"`
-	PrivateVpc            types.Int64  `tfsdk:"private_vpc"`
-	Tier                  types.String `tfsdk:"tier"`
-	HttpEndpoint          types.String `tfsdk:"http_endpoint"`
-	ProvisionState        types.String `tfsdk:"provision_state"`
-	Status                types.String `tfsdk:"status"`
-	DateCreated           types.String `tfsdk:"date_created"`
-	IsMasterSlave         types.Bool   `tfsdk:"is_master_slave"`
-	VpcType               types.String `tfsdk:"vpc_type"`
-	VpcName               types.String `tfsdk:"vpc_name"`
-	DeploymentType        types.String `tfsdk:"deployment_type"`
-	NumNodesDefault       types.Int64  `tfsdk:"num_nodes_default"`
+	ID                          types.String                  `tfsdk:"id"`
+	AccountName                 types.String                  `tfsdk:"account_name"`
+	UID                         types.String                  `tfsdk:"uid"`
+	Name                        types.String                  `tfsdk:"name"`
+	Application                 types.String                  `tfsdk:"application"`
+	ApplicationVersion          types.String                  `tfsdk:"application_version"`
+	TerminationLock             types.Bool                    `tfsdk:"termination_lock"`
+	PlanType                    types.String                  `tfsdk:"plan_type"`
+	Plan                        types.String                  `tfsdk:"plan"`
+	RegionId                    types.String                  `tfsdk:"region_id"`
+	CloudProvider               types.String                  `tfsdk:"cloud_provider"`
+	CloudProviderId             types.String                  `tfsdk:"cloud_provider_id"`
+	NumAdditionalAppNodes       types.Int64                   `tfsdk:"num_additional_app_nodes"`
+	PrivateVpc                  types.Int64                   `tfsdk:"private_vpc"`
+	Tier                        types.String                  `tfsdk:"tier"`
+	HttpEndpoint                types.String                  `tfsdk:"http_endpoint"`
+	ProvisionState              types.String                  `tfsdk:"provision_state"`
+	Status                      types.String                  `tfsdk:"status"`
+	DateCreated                 types.String                  `tfsdk:"date_created"`
+	IsMasterSlave               types.Bool                    `tfsdk:"is_master_slave"`
+	VpcType                     types.String                  `tfsdk:"vpc_type"`
+	VpcName                     types.String                  `tfsdk:"vpc_name"`
+	DeploymentType              types.String                  `tfsdk:"deployment_type"`
+	NumNodesDefault             types.Int64                   `tfsdk:"num_nodes_default"`
+	NumZookeeperNodesDefault    types.Int64                   `tfsdk:"num_zookeeper_nodes_default"`
+	NumAdditionalZookeeperNodes types.Int64                   `tfsdk:"num_additional_zookeeper_nodes"`
+	Servers                     types.List                    `tfsdk:"servers"`
+	ZookeeperEnsemble           types.String                  `tfsdk:"zookeeper_ensemble"`
+	Tags                        types.List   `tfsdk:"tags"`
+	SpecJVMHeapMemory           types.String `tfsdk:"spec_jvm_heap_memory"`
+	SpecDiskSpace               types.String `tfsdk:"spec_disk_space"`
+	SpecPhysicalMemory          types.String `tfsdk:"spec_physical_memory"`
+	BackupsEnabled              types.Bool   `tfsdk:"backups_enabled"`
+	DrEnabled                   types.Bool                    `tfsdk:"dr_enabled"`
+	SlaActive                   types.Bool                    `tfsdk:"sla_active"`
+	ApplicationNodesCount       types.Int64                   `tfsdk:"application_nodes_count"`
+	Subscription                types.String                  `tfsdk:"subscription"`
+	SecurityPack                types.Bool                    `tfsdk:"security_pack"`
+	DesiredTier                 types.String                  `tfsdk:"desired_tier"`
 }

@@ -86,12 +86,21 @@ type DeploymentsByTagList struct {
 }
 
 type DeploymentTags struct {
-	UID  string   `json:"uid"`
-	Tags []string `json:"tags"`
+	Deployment string   `json:"deployment"`
+	UID        string   `json:"uid"`
+	Tags       []string `json:"tags"`
+}
+
+func (d DeploymentTags) DeploymentUID() string {
+	if d.Deployment != "" {
+		return d.Deployment
+	}
+	return d.UID
 }
 
 type GetDeploymentsByTagRequest struct {
-	Tags []string `json:"tags"`
+	Tags     []string `json:"tags"`
+	Operator string   `json:"operator,omitempty"`
 }
 
 func (c *Client) GetDeploymentsByTag(accountName string, reqBody GetDeploymentsByTagRequest) (*DeploymentsByTagList, error) {

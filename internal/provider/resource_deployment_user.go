@@ -169,7 +169,6 @@ func (d *deploymentUserResource) Read(ctx context.Context, req resource.ReadRequ
 
 // Update updates the resource and sets the updated Terraform state on success.
 func (d *deploymentUserResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Retrieve values from plan
 	var plan deploymentUserModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -177,23 +176,44 @@ func (d *deploymentUserResource) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	// Generate API request body from plan
-	var item = searchstaxClient.DeploymentUser{
-		Username: plan.Username.ValueString(),
-		Password: plan.Password.ValueString(),
-		Role:     plan.Role.ValueString(),
-	}
-
-	_, err := d.client.UpdateDeploymentUser(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), item)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Updating SearchStax Deployment User",
-			"Could not update deployment user, unexpected error: "+err.Error(),
-		)
+	var state deploymentUserModel
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.ID = types.StringValue(fmt.Sprintf("%s/%s/%s", plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), plan.Username.ValueString()))
+	accountName := plan.AccountName.ValueString()
+	deploymentUID := plan.DeploymentUID.ValueString()
+	username := plan.Username.ValueString()
+
+	if !plan.Password.Equal(state.Password) {
+		if err := d.client.SetBasicAuthPassword(accountName, deploymentUID, searchstaxClient.SetBasicAuthPasswordRequest{
+			Username: username,
+			Password: plan.Password.ValueString(),
+		}); err != nil {
+			resp.Diagnostics.AddError(
+				"Error Updating SearchStax Deployment User Password",
+				"Could not update deployment user password, unexpected error: "+err.Error(),
+			)
+			return
+		}
+	}
+
+	if !plan.Role.Equal(state.Role) {
+		if err := d.client.SetBasicAuthRole(accountName, deploymentUID, searchstaxClient.SetBasicAuthRoleRequest{
+			Username: username,
+			Role:     plan.Role.ValueString(),
+		}); err != nil {
+			resp.Diagnostics.AddError(
+				"Error Updating SearchStax Deployment User Role",
+				"Could not update deployment user role, unexpected error: "+err.Error(),
+			)
+			return
+		}
+	}
+
+	plan.ID = types.StringValue(fmt.Sprintf("%s/%s/%s", accountName, deploymentUID, username))
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
