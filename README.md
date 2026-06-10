@@ -3,7 +3,7 @@
     <img src="https://www.searchstax.com/docs/wp-content/themes/docs/images/logo.svg" width="400" alt="SearchStax" />
     <br/>
    <a href="https://www.searchstax.com/docs/searchstax-cloud-apis-overview/">
-    <img src="https://img.shields.io/static/v1?label=Docs&message=API Ref&color=000000&style=for-the-badge"  alt="SearchStax Cloud API Documentation"/>
+    <img src="https://img.shields.io/static/v1?label=Docs&message=API&color=000000&style=for-the-badge"  alt="SearchStax Cloud API Documentation"/>
     </a>
 
 [![Tests](https://github.com/sadok-f/terraform-provider-searchstax/actions/workflows/test.yml/badge.svg)](https://github.com/sadok-f/terraform-provider-searchstax/actions/workflows/test.yml)
