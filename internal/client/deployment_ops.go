@@ -9,9 +9,9 @@ import (
 )
 
 type DeploymentHealth struct {
-	Status         string `json:"status"`
-	Level          string `json:"level"`
-	DeploymentUID  string `json:"deployment_uid"`
+	Status        string `json:"status"`
+	Level         string `json:"level"`
+	DeploymentUID string `json:"deployment_uid"`
 }
 
 func (c *Client) GetDeploymentHealth(accountName, deploymentID string) (*DeploymentHealth, error) {
@@ -196,14 +196,14 @@ type PlansList struct {
 }
 
 type Plan struct {
-	Name                 string       `json:"name"`
-	Plan                 string       `json:"plan"`
-	Description          string       `json:"description"`
-	PlanType             string       `json:"plan_type"`
-	Application          string       `json:"-"`
-	ApplicationVersions  []string     `json:"application_versions"`
-	PlanRegions          []PlanRegion `json:"plan_regions"`
-	TrialAvailable       bool         `json:"trial_available"`
+	Name                string       `json:"name"`
+	Plan                string       `json:"plan"`
+	Description         string       `json:"description"`
+	PlanType            string       `json:"plan_type"`
+	Application         string       `json:"-"`
+	ApplicationVersions []string     `json:"application_versions"`
+	PlanRegions         []PlanRegion `json:"plan_regions"`
+	TrialAvailable      bool         `json:"trial_available"`
 }
 
 type PlanRegion struct {

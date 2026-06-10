@@ -24,7 +24,7 @@ func (r *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 		"id":           schema.StringAttribute{Computed: true},
 		"account_name": schema.StringAttribute{Required: true},
 		"api_key":      schema.StringAttribute{Computed: true, Sensitive: true},
-		"scope": schema.ListAttribute{Optional: true, ElementType: types.StringType},
+		"scope":        schema.ListAttribute{Optional: true, ElementType: types.StringType},
 	}}
 }
 

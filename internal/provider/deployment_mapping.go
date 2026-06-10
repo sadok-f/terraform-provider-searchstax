@@ -12,42 +12,42 @@ import (
 
 func deploymentCommonSchemaAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
-		"uid":                              schema.StringAttribute{Computed: true},
-		"name":                             schema.StringAttribute{Computed: true},
-		"application":                      schema.StringAttribute{Computed: true},
-		"application_version":              schema.StringAttribute{Computed: true},
-		"tier":                             schema.StringAttribute{Computed: true},
-		"http_endpoint":                    schema.StringAttribute{Computed: true},
-		"status":                           schema.StringAttribute{Computed: true},
-		"provision_state":                  schema.StringAttribute{Computed: true},
-		"termination_lock":                 schema.BoolAttribute{Computed: true},
-		"plan_type":                        schema.StringAttribute{Computed: true},
-		"plan":                             schema.StringAttribute{Computed: true},
-		"is_master_slave":                  schema.BoolAttribute{Computed: true},
-		"vpc_type":                         schema.StringAttribute{Computed: true},
-		"vpc_name":                         schema.StringAttribute{Computed: true},
-		"region_id":                        schema.StringAttribute{Computed: true},
-		"cloud_provider":                   schema.StringAttribute{Computed: true},
-		"cloud_provider_id":                schema.StringAttribute{Computed: true},
-		"num_additional_app_nodes":         schema.Int64Attribute{Computed: true},
-		"deployment_type":                  schema.StringAttribute{Computed: true},
-		"num_nodes_default":                schema.Int64Attribute{Computed: true},
-		"num_zookeeper_nodes_default":      schema.Int64Attribute{Computed: true},
-		"num_additional_zookeeper_nodes":   schema.Int64Attribute{Computed: true},
-		"date_created":                     schema.StringAttribute{Computed: true},
-		"servers":                          schema.ListAttribute{Computed: true, ElementType: types.StringType},
-		"zookeeper_ensemble":               schema.StringAttribute{Computed: true},
-		"tags":                             schema.ListAttribute{Computed: true, ElementType: types.StringType},
-		"spec_jvm_heap_memory":             schema.StringAttribute{Computed: true},
-		"spec_disk_space":                  schema.StringAttribute{Computed: true},
-		"spec_physical_memory":             schema.StringAttribute{Computed: true},
-		"backups_enabled":                  schema.BoolAttribute{Computed: true},
-		"dr_enabled":                       schema.BoolAttribute{Computed: true},
-		"sla_active":                       schema.BoolAttribute{Computed: true},
-		"application_nodes_count":          schema.Int64Attribute{Computed: true},
-		"subscription":                     schema.StringAttribute{Computed: true},
-		"security_pack":                    schema.BoolAttribute{Computed: true},
-		"desired_tier":                     schema.StringAttribute{Computed: true},
+		"uid":                            schema.StringAttribute{Computed: true},
+		"name":                           schema.StringAttribute{Computed: true},
+		"application":                    schema.StringAttribute{Computed: true},
+		"application_version":            schema.StringAttribute{Computed: true},
+		"tier":                           schema.StringAttribute{Computed: true},
+		"http_endpoint":                  schema.StringAttribute{Computed: true},
+		"status":                         schema.StringAttribute{Computed: true},
+		"provision_state":                schema.StringAttribute{Computed: true},
+		"termination_lock":               schema.BoolAttribute{Computed: true},
+		"plan_type":                      schema.StringAttribute{Computed: true},
+		"plan":                           schema.StringAttribute{Computed: true},
+		"is_master_slave":                schema.BoolAttribute{Computed: true},
+		"vpc_type":                       schema.StringAttribute{Computed: true},
+		"vpc_name":                       schema.StringAttribute{Computed: true},
+		"region_id":                      schema.StringAttribute{Computed: true},
+		"cloud_provider":                 schema.StringAttribute{Computed: true},
+		"cloud_provider_id":              schema.StringAttribute{Computed: true},
+		"num_additional_app_nodes":       schema.Int64Attribute{Computed: true},
+		"deployment_type":                schema.StringAttribute{Computed: true},
+		"num_nodes_default":              schema.Int64Attribute{Computed: true},
+		"num_zookeeper_nodes_default":    schema.Int64Attribute{Computed: true},
+		"num_additional_zookeeper_nodes": schema.Int64Attribute{Computed: true},
+		"date_created":                   schema.StringAttribute{Computed: true},
+		"servers":                        schema.ListAttribute{Computed: true, ElementType: types.StringType},
+		"zookeeper_ensemble":             schema.StringAttribute{Computed: true},
+		"tags":                           schema.ListAttribute{Computed: true, ElementType: types.StringType},
+		"spec_jvm_heap_memory":           schema.StringAttribute{Computed: true},
+		"spec_disk_space":                schema.StringAttribute{Computed: true},
+		"spec_physical_memory":           schema.StringAttribute{Computed: true},
+		"backups_enabled":                schema.BoolAttribute{Computed: true},
+		"dr_enabled":                     schema.BoolAttribute{Computed: true},
+		"sla_active":                     schema.BoolAttribute{Computed: true},
+		"application_nodes_count":        schema.Int64Attribute{Computed: true},
+		"subscription":                   schema.StringAttribute{Computed: true},
+		"security_pack":                  schema.BoolAttribute{Computed: true},
+		"desired_tier":                   schema.StringAttribute{Computed: true},
 	}
 }
 
@@ -58,42 +58,42 @@ type deploymentSpecificationsModel struct {
 }
 
 type deploymentsModel struct {
-	UID                         types.String                  `tfsdk:"uid"`
-	Name                        types.String                  `tfsdk:"name"`
-	Application                 types.String                  `tfsdk:"application"`
-	ApplicationVersion          types.String                  `tfsdk:"application_version"`
-	Tier                        types.String                  `tfsdk:"tier"`
-	HttpEndpoint                types.String                  `tfsdk:"http_endpoint"`
-	Status                      types.String                  `tfsdk:"status"`
-	ProvisionState              types.String                  `tfsdk:"provision_state"`
-	TerminationLock             types.Bool                    `tfsdk:"termination_lock"`
-	Plan                        types.String                  `tfsdk:"plan"`
-	PlanType                    types.String                  `tfsdk:"plan_type"`
-	IsMasterSlave               types.Bool                    `tfsdk:"is_master_slave"`
-	VpcType                     types.String                  `tfsdk:"vpc_type"`
-	VpcName                     types.String                  `tfsdk:"vpc_name"`
-	RegionId                    types.String                  `tfsdk:"region_id"`
-	CloudProvider               types.String                  `tfsdk:"cloud_provider"`
-	CloudProviderId             types.String                  `tfsdk:"cloud_provider_id"`
-	NumAdditionalAppNodes       types.Int64                   `tfsdk:"num_additional_app_nodes"`
-	DeploymentType              types.String                  `tfsdk:"deployment_type"`
-	NumNodesDefault             types.Int64                   `tfsdk:"num_nodes_default"`
-	NumZookeeperNodesDefault    types.Int64                   `tfsdk:"num_zookeeper_nodes_default"`
-	NumAdditionalZookeeperNodes types.Int64                   `tfsdk:"num_additional_zookeeper_nodes"`
-	DateCreated                 types.String                  `tfsdk:"date_created"`
-	Servers                     types.List                    `tfsdk:"servers"`
-	ZookeeperEnsemble           types.String                  `tfsdk:"zookeeper_ensemble"`
-	Tags                        types.List                    `tfsdk:"tags"`
-	SpecJVMHeapMemory           types.String                  `tfsdk:"spec_jvm_heap_memory"`
-	SpecDiskSpace               types.String                  `tfsdk:"spec_disk_space"`
-	SpecPhysicalMemory          types.String                  `tfsdk:"spec_physical_memory"`
-	BackupsEnabled              types.Bool                    `tfsdk:"backups_enabled"`
-	DrEnabled                   types.Bool                    `tfsdk:"dr_enabled"`
-	SlaActive                   types.Bool                    `tfsdk:"sla_active"`
-	ApplicationNodesCount       types.Int64                   `tfsdk:"application_nodes_count"`
-	Subscription                types.String                  `tfsdk:"subscription"`
-	SecurityPack                types.Bool                    `tfsdk:"security_pack"`
-	DesiredTier                 types.String                  `tfsdk:"desired_tier"`
+	UID                         types.String `tfsdk:"uid"`
+	Name                        types.String `tfsdk:"name"`
+	Application                 types.String `tfsdk:"application"`
+	ApplicationVersion          types.String `tfsdk:"application_version"`
+	Tier                        types.String `tfsdk:"tier"`
+	HttpEndpoint                types.String `tfsdk:"http_endpoint"`
+	Status                      types.String `tfsdk:"status"`
+	ProvisionState              types.String `tfsdk:"provision_state"`
+	TerminationLock             types.Bool   `tfsdk:"termination_lock"`
+	Plan                        types.String `tfsdk:"plan"`
+	PlanType                    types.String `tfsdk:"plan_type"`
+	IsMasterSlave               types.Bool   `tfsdk:"is_master_slave"`
+	VpcType                     types.String `tfsdk:"vpc_type"`
+	VpcName                     types.String `tfsdk:"vpc_name"`
+	RegionId                    types.String `tfsdk:"region_id"`
+	CloudProvider               types.String `tfsdk:"cloud_provider"`
+	CloudProviderId             types.String `tfsdk:"cloud_provider_id"`
+	NumAdditionalAppNodes       types.Int64  `tfsdk:"num_additional_app_nodes"`
+	DeploymentType              types.String `tfsdk:"deployment_type"`
+	NumNodesDefault             types.Int64  `tfsdk:"num_nodes_default"`
+	NumZookeeperNodesDefault    types.Int64  `tfsdk:"num_zookeeper_nodes_default"`
+	NumAdditionalZookeeperNodes types.Int64  `tfsdk:"num_additional_zookeeper_nodes"`
+	DateCreated                 types.String `tfsdk:"date_created"`
+	Servers                     types.List   `tfsdk:"servers"`
+	ZookeeperEnsemble           types.String `tfsdk:"zookeeper_ensemble"`
+	Tags                        types.List   `tfsdk:"tags"`
+	SpecJVMHeapMemory           types.String `tfsdk:"spec_jvm_heap_memory"`
+	SpecDiskSpace               types.String `tfsdk:"spec_disk_space"`
+	SpecPhysicalMemory          types.String `tfsdk:"spec_physical_memory"`
+	BackupsEnabled              types.Bool   `tfsdk:"backups_enabled"`
+	DrEnabled                   types.Bool   `tfsdk:"dr_enabled"`
+	SlaActive                   types.Bool   `tfsdk:"sla_active"`
+	ApplicationNodesCount       types.Int64  `tfsdk:"application_nodes_count"`
+	Subscription                types.String `tfsdk:"subscription"`
+	SecurityPack                types.Bool   `tfsdk:"security_pack"`
+	DesiredTier                 types.String `tfsdk:"desired_tier"`
 }
 
 func mapDeploymentModel(ctx context.Context, deployment searchstaxClient.Deployment) (deploymentsModel, diag.Diagnostics) {

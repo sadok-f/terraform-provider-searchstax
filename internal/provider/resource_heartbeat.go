@@ -24,17 +24,17 @@ func (r *heartbeatResource) Metadata(_ context.Context, req resource.MetadataReq
 
 func (r *heartbeatResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{Attributes: map[string]schema.Attribute{
-		"id":               schema.StringAttribute{Computed: true},
-		"account_name":     schema.StringAttribute{Required: true},
-		"deployment_uid":   schema.StringAttribute{Required: true},
-		"heartbeat_id":     schema.Int64Attribute{Computed: true},
-		"name":             schema.StringAttribute{Required: true},
-		"host":             schema.StringAttribute{Required: true},
-		"interval":         schema.StringAttribute{Required: true},
-		"max_alerts":       schema.StringAttribute{Required: true},
-		"email":            schema.ListAttribute{Optional: true, ElementType: types.StringType},
-		"webhook_trigger":  schema.Int64Attribute{Optional: true},
-		"webhook_resolve":  schema.Int64Attribute{Optional: true},
+		"id":              schema.StringAttribute{Computed: true},
+		"account_name":    schema.StringAttribute{Required: true},
+		"deployment_uid":  schema.StringAttribute{Required: true},
+		"heartbeat_id":    schema.Int64Attribute{Computed: true},
+		"name":            schema.StringAttribute{Required: true},
+		"host":            schema.StringAttribute{Required: true},
+		"interval":        schema.StringAttribute{Required: true},
+		"max_alerts":      schema.StringAttribute{Required: true},
+		"email":           schema.ListAttribute{Optional: true, ElementType: types.StringType},
+		"webhook_trigger": schema.Int64Attribute{Optional: true},
+		"webhook_resolve": schema.Int64Attribute{Optional: true},
 	}}
 }
 

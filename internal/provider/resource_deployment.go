@@ -489,43 +489,43 @@ func (d *deploymentResource) ImportState(ctx context.Context, req resource.Impor
 
 // deploymentModel maps deployment schema data.
 type deploymentModel struct {
-	ID                          types.String                  `tfsdk:"id"`
-	AccountName                 types.String                  `tfsdk:"account_name"`
-	UID                         types.String                  `tfsdk:"uid"`
-	Name                        types.String                  `tfsdk:"name"`
-	Application                 types.String                  `tfsdk:"application"`
-	ApplicationVersion          types.String                  `tfsdk:"application_version"`
-	TerminationLock             types.Bool                    `tfsdk:"termination_lock"`
-	PlanType                    types.String                  `tfsdk:"plan_type"`
-	Plan                        types.String                  `tfsdk:"plan"`
-	RegionId                    types.String                  `tfsdk:"region_id"`
-	CloudProvider               types.String                  `tfsdk:"cloud_provider"`
-	CloudProviderId             types.String                  `tfsdk:"cloud_provider_id"`
-	NumAdditionalAppNodes       types.Int64                   `tfsdk:"num_additional_app_nodes"`
-	PrivateVpc                  types.Int64                   `tfsdk:"private_vpc"`
-	Tier                        types.String                  `tfsdk:"tier"`
-	HttpEndpoint                types.String                  `tfsdk:"http_endpoint"`
-	ProvisionState              types.String                  `tfsdk:"provision_state"`
-	Status                      types.String                  `tfsdk:"status"`
-	DateCreated                 types.String                  `tfsdk:"date_created"`
-	IsMasterSlave               types.Bool                    `tfsdk:"is_master_slave"`
-	VpcType                     types.String                  `tfsdk:"vpc_type"`
-	VpcName                     types.String                  `tfsdk:"vpc_name"`
-	DeploymentType              types.String                  `tfsdk:"deployment_type"`
-	NumNodesDefault             types.Int64                   `tfsdk:"num_nodes_default"`
-	NumZookeeperNodesDefault    types.Int64                   `tfsdk:"num_zookeeper_nodes_default"`
-	NumAdditionalZookeeperNodes types.Int64                   `tfsdk:"num_additional_zookeeper_nodes"`
-	Servers                     types.List                    `tfsdk:"servers"`
-	ZookeeperEnsemble           types.String                  `tfsdk:"zookeeper_ensemble"`
+	ID                          types.String `tfsdk:"id"`
+	AccountName                 types.String `tfsdk:"account_name"`
+	UID                         types.String `tfsdk:"uid"`
+	Name                        types.String `tfsdk:"name"`
+	Application                 types.String `tfsdk:"application"`
+	ApplicationVersion          types.String `tfsdk:"application_version"`
+	TerminationLock             types.Bool   `tfsdk:"termination_lock"`
+	PlanType                    types.String `tfsdk:"plan_type"`
+	Plan                        types.String `tfsdk:"plan"`
+	RegionId                    types.String `tfsdk:"region_id"`
+	CloudProvider               types.String `tfsdk:"cloud_provider"`
+	CloudProviderId             types.String `tfsdk:"cloud_provider_id"`
+	NumAdditionalAppNodes       types.Int64  `tfsdk:"num_additional_app_nodes"`
+	PrivateVpc                  types.Int64  `tfsdk:"private_vpc"`
+	Tier                        types.String `tfsdk:"tier"`
+	HttpEndpoint                types.String `tfsdk:"http_endpoint"`
+	ProvisionState              types.String `tfsdk:"provision_state"`
+	Status                      types.String `tfsdk:"status"`
+	DateCreated                 types.String `tfsdk:"date_created"`
+	IsMasterSlave               types.Bool   `tfsdk:"is_master_slave"`
+	VpcType                     types.String `tfsdk:"vpc_type"`
+	VpcName                     types.String `tfsdk:"vpc_name"`
+	DeploymentType              types.String `tfsdk:"deployment_type"`
+	NumNodesDefault             types.Int64  `tfsdk:"num_nodes_default"`
+	NumZookeeperNodesDefault    types.Int64  `tfsdk:"num_zookeeper_nodes_default"`
+	NumAdditionalZookeeperNodes types.Int64  `tfsdk:"num_additional_zookeeper_nodes"`
+	Servers                     types.List   `tfsdk:"servers"`
+	ZookeeperEnsemble           types.String `tfsdk:"zookeeper_ensemble"`
 	Tags                        types.List   `tfsdk:"tags"`
 	SpecJVMHeapMemory           types.String `tfsdk:"spec_jvm_heap_memory"`
 	SpecDiskSpace               types.String `tfsdk:"spec_disk_space"`
 	SpecPhysicalMemory          types.String `tfsdk:"spec_physical_memory"`
 	BackupsEnabled              types.Bool   `tfsdk:"backups_enabled"`
-	DrEnabled                   types.Bool                    `tfsdk:"dr_enabled"`
-	SlaActive                   types.Bool                    `tfsdk:"sla_active"`
-	ApplicationNodesCount       types.Int64                   `tfsdk:"application_nodes_count"`
-	Subscription                types.String                  `tfsdk:"subscription"`
-	SecurityPack                types.Bool                    `tfsdk:"security_pack"`
-	DesiredTier                 types.String                  `tfsdk:"desired_tier"`
+	DrEnabled                   types.Bool   `tfsdk:"dr_enabled"`
+	SlaActive                   types.Bool   `tfsdk:"sla_active"`
+	ApplicationNodesCount       types.Int64  `tfsdk:"application_nodes_count"`
+	Subscription                types.String `tfsdk:"subscription"`
+	SecurityPack                types.Bool   `tfsdk:"security_pack"`
+	DesiredTier                 types.String `tfsdk:"desired_tier"`
 }

@@ -27,15 +27,15 @@ func (d *usageExtendedDataSource) Schema(_ context.Context, _ datasource.SchemaR
 		"year":         schema.Int64Attribute{Required: true},
 		"month":        schema.Int64Attribute{Required: true},
 		"events": schema.ListNestedAttribute{Computed: true, NestedObject: schema.NestedAttributeObject{Attributes: map[string]schema.Attribute{
-			"object_id":             schema.StringAttribute{Computed: true},
-			"sku":                   schema.StringAttribute{Computed: true},
-			"usage":                 schema.Int64Attribute{Computed: true},
-			"start_date":            schema.StringAttribute{Computed: true},
-			"end_date":              schema.StringAttribute{Computed: true},
-			"currency":              schema.StringAttribute{Computed: true},
-			"amount":                schema.StringAttribute{Computed: true},
-			"tag_collection":        schema.ListAttribute{Computed: true, ElementType: types.StringType},
-			"extended_attributes":   schema.ListAttribute{Computed: true, ElementType: types.StringType},
+			"object_id":           schema.StringAttribute{Computed: true},
+			"sku":                 schema.StringAttribute{Computed: true},
+			"usage":               schema.Int64Attribute{Computed: true},
+			"start_date":          schema.StringAttribute{Computed: true},
+			"end_date":            schema.StringAttribute{Computed: true},
+			"currency":            schema.StringAttribute{Computed: true},
+			"amount":              schema.StringAttribute{Computed: true},
+			"tag_collection":      schema.ListAttribute{Computed: true, ElementType: types.StringType},
+			"extended_attributes": schema.ListAttribute{Computed: true, ElementType: types.StringType},
 		}}},
 	}}
 }
@@ -84,15 +84,15 @@ func (d *usageExtendedDataSource) Read(ctx context.Context, req datasource.ReadR
 		attrs, diags := types.ListValueFrom(ctx, types.StringType, e.ExtendedAttributes)
 		resp.Diagnostics.Append(diags...)
 		state.Events = append(state.Events, usageExtendedEventModel{
-			ObjectID:            types.StringValue(e.ObjectID),
-			SKU:                 types.StringValue(e.SKU),
-			Usage:               types.Int64Value(int64(e.Usage)),
-			StartDate:           types.StringValue(e.StartDate),
-			EndDate:             types.StringValue(e.EndDate),
-			Currency:            types.StringValue(e.Currency),
-			Amount:              types.StringValue(formatUsageAmount(e.Amount)),
-			TagCollection:       tags,
-			ExtendedAttributes:  attrs,
+			ObjectID:           types.StringValue(e.ObjectID),
+			SKU:                types.StringValue(e.SKU),
+			Usage:              types.Int64Value(int64(e.Usage)),
+			StartDate:          types.StringValue(e.StartDate),
+			EndDate:            types.StringValue(e.EndDate),
+			Currency:           types.StringValue(e.Currency),
+			Amount:             types.StringValue(formatUsageAmount(e.Amount)),
+			TagCollection:      tags,
+			ExtendedAttributes: attrs,
 		})
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

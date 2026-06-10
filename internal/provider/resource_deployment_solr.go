@@ -81,9 +81,11 @@ func (r *deploymentSolrResource) Read(ctx context.Context, req resource.ReadRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *deploymentSolrResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {}
+func (r *deploymentSolrResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+}
 
-func (r *deploymentSolrResource) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {}
+func (r *deploymentSolrResource) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {
+}
 
 type deploymentSolrResourceModel struct {
 	ID            types.String `tfsdk:"id"`

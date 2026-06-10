@@ -146,7 +146,8 @@ func (r *backupScheduleResource) Read(ctx context.Context, req resource.ReadRequ
 	resp.State.RemoveResource(ctx)
 }
 
-func (r *backupScheduleResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {}
+func (r *backupScheduleResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+}
 
 func (r *backupScheduleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state backupScheduleResourceModel

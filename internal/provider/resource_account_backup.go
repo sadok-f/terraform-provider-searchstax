@@ -73,7 +73,8 @@ func (r *accountBackupResource) Read(ctx context.Context, req resource.ReadReque
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *accountBackupResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {}
+func (r *accountBackupResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+}
 
 func (r *accountBackupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state accountBackupResourceModel

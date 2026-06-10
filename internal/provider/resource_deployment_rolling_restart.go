@@ -98,9 +98,11 @@ func (r *deploymentRollingRestartResource) Read(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *deploymentRollingRestartResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {}
+func (r *deploymentRollingRestartResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+}
 
-func (r *deploymentRollingRestartResource) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {}
+func (r *deploymentRollingRestartResource) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {
+}
 
 type deploymentRollingRestartResourceModel struct {
 	ID            types.String `tfsdk:"id"`

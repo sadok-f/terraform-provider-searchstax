@@ -25,7 +25,7 @@ func (r *restoreResource) Metadata(_ context.Context, req resource.MetadataReque
 
 func (r *restoreResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{Attributes: map[string]schema.Attribute{
-		"id": schema.StringAttribute{Computed: true},
+		"id":           schema.StringAttribute{Computed: true},
 		"account_name": schema.StringAttribute{Required: true},
 		"backup_id": schema.StringAttribute{
 			Required: true,

@@ -83,7 +83,8 @@ func (r *apiKeyAssociationResource) Read(ctx context.Context, req resource.ReadR
 	resp.State.RemoveResource(ctx)
 }
 
-func (r *apiKeyAssociationResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {}
+func (r *apiKeyAssociationResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+}
 
 func (r *apiKeyAssociationResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state apiKeyAssociationResourceModel

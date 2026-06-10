@@ -157,15 +157,15 @@ type HeartbeatsList struct {
 }
 
 type Heartbeat struct {
-	ID              int64    `json:"id,omitempty"`
-	Name            string   `json:"name,omitempty"`
-	Host            string   `json:"host,omitempty"`
-	Interval        string   `json:"interval,omitempty"`
-	MaxAlerts       string   `json:"max_alerts,omitempty"`
-	Email           []string `json:"email,omitempty"`
-	WebhookTrigger  int64    `json:"webhook_trigger,omitempty"`
-	WebhookResolve  int64    `json:"webhook_resolve,omitempty"`
-	Status          string   `json:"status,omitempty"`
+	ID             int64    `json:"id,omitempty"`
+	Name           string   `json:"name,omitempty"`
+	Host           string   `json:"host,omitempty"`
+	Interval       string   `json:"interval,omitempty"`
+	MaxAlerts      string   `json:"max_alerts,omitempty"`
+	Email          []string `json:"email,omitempty"`
+	WebhookTrigger int64    `json:"webhook_trigger,omitempty"`
+	WebhookResolve int64    `json:"webhook_resolve,omitempty"`
+	Status         string   `json:"status,omitempty"`
 }
 
 func (c *Client) GetHeartbeats(accountName, deploymentID string) (*HeartbeatsList, error) {

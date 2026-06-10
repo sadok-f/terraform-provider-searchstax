@@ -21,11 +21,11 @@ func (d *authTokenDataSource) Metadata(_ context.Context, req datasource.Metadat
 
 func (d *authTokenDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{Attributes: map[string]schema.Attribute{
-		"id":                     schema.StringAttribute{Computed: true},
-		"token":                  schema.StringAttribute{Computed: true, Sensitive: true},
-		"valid":                  schema.BoolAttribute{Computed: true},
-		"expires_in_seconds":     schema.Int64Attribute{Computed: true},
-		"token_expires_at":       schema.StringAttribute{Computed: true},
+		"id":                 schema.StringAttribute{Computed: true},
+		"token":              schema.StringAttribute{Computed: true, Sensitive: true},
+		"valid":              schema.BoolAttribute{Computed: true},
+		"expires_in_seconds": schema.Int64Attribute{Computed: true},
+		"token_expires_at":   schema.StringAttribute{Computed: true},
 	}}
 }
 
