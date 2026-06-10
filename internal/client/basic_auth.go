@@ -81,10 +81,7 @@ type SetBasicAuthRoleRequest struct {
 // IsBasicAuthEnabled reports whether Solr basic auth appears enabled for a deployment.
 func (c *Client) IsBasicAuthEnabled(accountName, deploymentID string) (bool, error) {
 	_, err := c.GetDeploymentUsers(accountName, deploymentID)
-	if err != nil {
-		return false, nil
-	}
-	return true, nil
+	return err == nil, nil
 }
 
 func (c *Client) SetBasicAuthRole(accountName, deploymentID string, reqBody SetBasicAuthRoleRequest) error {
