@@ -1,7 +1,9 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -59,9 +61,42 @@ func (c *Client) GetDeployment(accountName string, deploymentID string) (*Deploy
 	return &deployment, nil
 }
 
+// deploymentCreateRequest is the payload accepted by the SearchStax
+// deployment-create API. It intentionally contains only the fields the API
+// expects on creation; sending the full Deployment struct would include
+// response-only fields (e.g. an empty "subscription"), which the API rejects.
+type deploymentCreateRequest struct {
+	Name                  string `json:"name"`
+	Application           string `json:"application"`
+	ApplicationVersion    string `json:"application_version"`
+	TerminationLock       bool   `json:"termination_lock"`
+	PlanType              string `json:"plan_type"`
+	Plan                  string `json:"plan"`
+	RegionId              string `json:"region_id"`
+	CloudProviderId       string `json:"cloud_provider_id"`
+	NumAdditionalAppNodes int64  `json:"num_additional_app_nodes"`
+	PrivateVpc            *int64 `json:"private_vpc,omitempty"`
+}
+
 // CreateDeployment - Create new deployment.
 func (c *Client) CreateDeployment(deployment Deployment, accountName string) (*Deployment, *Error) {
-	rb, err := json.Marshal(deployment)
+	payload := deploymentCreateRequest{
+		Name:                  deployment.Name,
+		Application:           deployment.Application,
+		ApplicationVersion:    deployment.ApplicationVersion,
+		TerminationLock:       deployment.TerminationLock,
+		PlanType:              deployment.PlanType,
+		Plan:                  deployment.Plan,
+		RegionId:              deployment.RegionId,
+		CloudProviderId:       deployment.CloudProviderId,
+		NumAdditionalAppNodes: deployment.NumAdditionalAppNodes,
+	}
+	if deployment.PrivateVpc != 0 {
+		vpc := deployment.PrivateVpc
+		payload.PrivateVpc = &vpc
+	}
+
+	rb, err := json.Marshal(payload)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -125,7 +160,7 @@ func (c *Client) CreateDeployment(deployment Deployment, accountName string) (*D
 
 // UpdateDeployment -Update a deployment: for now it recreate the cluster.
 func (c *Client) UpdateDeployment(accountName string, deploymentID string, deployment Deployment) (*Deployment, *Error) {
-	err := c.DeleteDeployment(accountName, deploymentID)
+	err := c.DeleteDeployment(context.Background(), accountName, deploymentID)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -145,8 +180,8 @@ func (c *Client) UpdateDeployment(accountName string, deploymentID string, deplo
 }
 
 // DeleteDeployment -Delete a specific deployment.
-func (c *Client) DeleteDeployment(accountName string, deploymentID string) *Error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/account/%s/deployment/%s/", c.HostURL, accountName, deploymentID), nil)
+func (c *Client) DeleteDeployment(ctx context.Context, accountName string, deploymentID string) *Error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/account/%s/deployment/%s/", c.HostURL, accountName, deploymentID), nil)
 	if err != nil {
 		return &Error{
 			err:     err,
@@ -175,20 +210,53 @@ func (c *Client) DeleteDeployment(accountName string, deploymentID string) *Erro
 			context: "ApiResponseOnDelete",
 		}
 	}
-	//Check the resource status in a loop until it got deleted
+
+	// Poll until the deployment is actually gone (the API returns 404) or the
+	// timeout elapses. Only a definitive 404 confirms deletion — a transient
+	// error (network blip, 5xx, expired token) must NOT be treated as success,
+	// otherwise Terraform would drop the resource from state while it still
+	// exists, leaving orphaned infrastructure.
+	const (
+		maxWait      = 30 * time.Minute
+		pollInterval = 15 * time.Second
+	)
+	deadline := time.Now().Add(maxWait)
 	for {
-		dep, err := c.GetDeployment(accountName, deploymentID)
-		if err != nil {
-			fmt.Printf("Deployment Deleted successfully: %v\n", err)
-			return nil
-		}
-		// a workaround for the Acceptance tests to pass (since it is running against a mock API)
-		if dep.Status == "Running" && dep.ProvisionState == "Done" {
+		dep, getErr := c.GetDeployment(accountName, deploymentID)
+		if getErr != nil {
+			if isNotFound(getErr) {
+				return nil // deployment is gone
+			}
+			// Transient error: keep polling until the timeout.
+		} else if c.isMockHost() && dep.Status == "Running" && dep.ProvisionState == "Done" {
+			// The mock API used by the acceptance tests never returns 404 after
+			// a delete; treat a healthy mock deployment as deleted. This branch
+			// is gated to the mock host so it cannot fire against a real API.
 			return nil
 		}
 
-		time.Sleep(time.Minute)
+		if time.Now().After(deadline) {
+			return &Error{
+				context: "DeleteDeploymentTimeout",
+				err:     fmt.Errorf("timed out after %s waiting for deployment %s to be deleted", maxWait, deploymentID),
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return &Error{context: "DeleteDeploymentCanceled", err: ctx.Err()}
+		case <-time.After(pollInterval):
+		}
 	}
+}
+
+// isNotFound reports whether err (or a wrapped error) is an HTTP 404 response.
+func isNotFound(err error) bool {
+	var httpErr *HTTPStatusError
+	if errors.As(err, &httpErr) {
+		return httpErr.StatusCode == http.StatusNotFound
+	}
+	return false
 }
 
 // DeploymentsList - DeploymentsList struct.

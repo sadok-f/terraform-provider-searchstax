@@ -3,6 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
+	searchstaxClient "terraform-provider-searchstax/internal/client"
+
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -12,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
-	searchstaxClient "terraform-provider-searchstax/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -461,7 +462,7 @@ func (d *deploymentResource) Delete(ctx context.Context, req resource.DeleteRequ
 	}
 
 	// Delete existing deployment
-	err := d.client.DeleteDeployment(state.AccountName.ValueString(), state.UID.ValueString())
+	err := d.client.DeleteDeployment(ctx, state.AccountName.ValueString(), state.UID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Deleting SearchStax Deployment",

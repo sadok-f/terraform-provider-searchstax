@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -38,6 +39,14 @@ func (r *deploymentRollingRestartResource) Schema(_ context.Context, _ resource.
 			Optional: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.RequiresReplace(),
+			},
+		},
+		"triggers": schema.MapAttribute{
+			ElementType: types.StringType,
+			Optional:    true,
+			Description: "Arbitrary map of values that, when changed, forces a new rolling restart. Use it to trigger a single restart when the custom jar list changes.",
+			PlanModifiers: []planmodifier.Map{
+				mapplanmodifier.RequiresReplace(),
 			},
 		},
 		"message": schema.StringAttribute{Computed: true},
@@ -78,8 +87,6 @@ func (r *deploymentRollingRestartResource) Create(ctx context.Context, req resou
 		resp.Diagnostics.AddError("Error initiating rolling restart", err.Error())
 		return
 	}
-	plan.Solr = types.BoolValue(solr)
-	plan.Zookeeper = types.BoolValue(zookeeper)
 	msg := out.Message
 	if msg == "" {
 		msg = out.Detail
@@ -110,5 +117,6 @@ type deploymentRollingRestartResourceModel struct {
 	DeploymentUID types.String `tfsdk:"deployment_uid"`
 	Solr          types.Bool   `tfsdk:"solr"`
 	Zookeeper     types.Bool   `tfsdk:"zookeeper"`
+	Triggers      types.Map    `tfsdk:"triggers"`
 	Message       types.String `tfsdk:"message"`
 }

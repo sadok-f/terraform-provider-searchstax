@@ -33,7 +33,10 @@ type AuthResponse struct {
 // NewClient - initialize a new Client.
 func NewClient(host, username, password *string) (*Client, error) {
 	c := Client{
-		HTTPClient: &http.Client{Timeout: 30 * time.Second},
+		// Solr operations such as enabling basic auth or a rolling restart
+		// can take several minutes to return (the API responds synchronously),
+		// so use a generous timeout instead of the default 30s.
+		HTTPClient: &http.Client{Timeout: 10 * time.Minute},
 		// Default Searchstax URL
 		HostURL: HostURL,
 	}
@@ -68,11 +71,34 @@ func (c *Client) RestHostURL() string {
 	return strings.Replace(c.HostURL, "/api/rest/v2", "/api/rest", 1)
 }
 
+// isMockHost reports whether the client is pointed at the local mock API used
+// by the acceptance tests (which never returns 404 after a delete). It is used
+// to gate test-only workarounds so they cannot affect real deployments.
+func (c *Client) isMockHost() bool {
+	return strings.Contains(c.HostURL, "localhost") || strings.Contains(c.HostURL, "127.0.0.1")
+}
+
+// HTTPStatusError is returned by doRequest when the API responds with a non-2xx
+// status. It preserves the status code so callers can distinguish, for example,
+// a 404 (resource gone) from a transient 5xx or auth error.
+type HTTPStatusError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *HTTPStatusError) Error() string {
+	return fmt.Sprintf("status: %d, body: %s", e.StatusCode, e.Body)
+}
+
 // doRequest - send the Request.
 func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	token := c.Token
 
-	req.Header.Set("Content-Type", "application/json")
+	// Preserve a Content-Type that the caller already set (e.g. the
+	// multipart/form-data boundary used for file uploads); default to JSON.
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	if token != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
 	}
@@ -89,7 +115,7 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	}
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return nil, fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
+		return nil, &HTTPStatusError{StatusCode: res.StatusCode, Body: string(body)}
 	}
 
 	return body, err

@@ -65,7 +65,15 @@ func (d *plansDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 	page := int(state.Page.ValueInt64())
-	out, err := d.client.GetPlans(state.AccountName.ValueString(), state.Application.ValueString(), state.PlanType.ValueString(), page)
+	var (
+		out *searchstaxClient.PlansList
+		err error
+	)
+	if page > 0 {
+		out, err = d.client.GetPlans(state.AccountName.ValueString(), state.Application.ValueString(), state.PlanType.ValueString(), page)
+	} else {
+		out, err = d.client.GetAllPlans(state.AccountName.ValueString(), state.Application.ValueString(), state.PlanType.ValueString())
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read plans", err.Error())
 		return

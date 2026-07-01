@@ -72,25 +72,21 @@ func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName
 		}
 	}
 
+	// A 2xx response from doRequest means the user was created. The mock API
+	// returns {"created": true}; the real API returns the user payload without
+	// a "created" field, so only treat an explicit {"created": false} as a
+	// failure.
 	var createResp struct {
-		Created bool `json:"created"`
+		Created *bool `json:"created"`
 	}
-	err = json.Unmarshal(body, &createResp)
-	if err != nil {
+	if err := json.Unmarshal(body, &createResp); err == nil && createResp.Created != nil && !*createResp.Created {
 		return nil, &Error{
-			err:     err,
-			context: "Unmarshal",
+			err:     fmt.Errorf("deployment user not created"),
+			context: "CreateDeploymentUser",
 		}
 	}
 
-	if createResp.Created {
-		return &deploymentUser, nil
-	}
-
-	return nil, &Error{
-		err:     fmt.Errorf("deployment user not created"),
-		context: "CreateDeploymentUser",
-	}
+	return &deploymentUser, nil
 }
 
 // UpdateDeploymentUser updates a deployment user by deleting then re-adding.
@@ -182,6 +178,59 @@ func (c *Client) DeleteDeploymentUser(accountName string, deploymentID string, u
 // DeploymentUsersList represents the list payload for basic auth users.
 type DeploymentUsersList struct {
 	Results []DeploymentUser `json:"results"`
+}
+
+// UnmarshalJSON supports both response shapes for the get-users endpoint:
+//   - The real API returns {"success":"true","users":{"<name>":{"roles":[...]}}}.
+//   - The mock API returns {"results":[{"username":"...","role":"..."}]}.
+func (l *DeploymentUsersList) UnmarshalJSON(data []byte) error {
+	var real struct {
+		Users map[string]struct {
+			Roles []string `json:"roles"`
+		} `json:"users"`
+	}
+	if err := json.Unmarshal(data, &real); err == nil && real.Users != nil {
+		l.Results = nil
+		for name, u := range real.Users {
+			l.Results = append(l.Results, DeploymentUser{
+				Username: name,
+				Role:     canonicalRole(u.Roles),
+			})
+		}
+		return nil
+	}
+
+	type alias DeploymentUsersList
+	var a alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	*l = DeploymentUsersList(a)
+	return nil
+}
+
+// canonicalRole reduces the roles list returned by the API to the single
+// role value used by this provider (Admin, ReadWrite, Read, or Write).
+func canonicalRole(roles []string) string {
+	has := make(map[string]bool, len(roles))
+	for _, r := range roles {
+		has[r] = true
+	}
+	switch {
+	case has["Admin"]:
+		return "Admin"
+	case has["Read"] && has["Write"]:
+		return "ReadWrite"
+	case has["Read"]:
+		return "Read"
+	case has["Write"]:
+		return "Write"
+	default:
+		if len(roles) > 0 {
+			return roles[len(roles)-1]
+		}
+		return ""
+	}
 }
 
 // DeploymentUser represents a basic auth user.

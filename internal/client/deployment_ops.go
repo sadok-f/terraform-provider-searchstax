@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type DeploymentHealth struct {
@@ -141,7 +142,42 @@ func (c *Client) RollingRestart(accountName, deploymentID string, reqBody Rollin
 	if err := json.Unmarshal(body, &out); err != nil {
 		return nil, err
 	}
+
+	// Wait until the deployment is healthy again so the rolling restart is
+	// fully complete before returning (mirrors the reference Python module,
+	// which polls deployment-health until status == "OK").
+	if err := c.waitForDeploymentHealthy(accountName, deploymentID); err != nil {
+		return nil, err
+	}
+
 	return &out, nil
+}
+
+// waitForDeploymentHealthy polls the deployment-health endpoint until the
+// deployment reports a healthy status ("OK" from the real API, "Healthy" from
+// the mock API) or until the timeout elapses.
+func (c *Client) waitForDeploymentHealthy(accountName, deploymentID string) error {
+	const (
+		maxWait      = time.Hour
+		pollInterval = 5 * time.Second
+	)
+	deadline := time.Now().Add(maxWait)
+	for {
+		health, err := c.GetDeploymentHealth(accountName, deploymentID)
+		if err == nil {
+			switch strings.ToLower(health.Status) {
+			case "ok", "healthy":
+				return nil
+			}
+		}
+		if time.Now().After(deadline) {
+			if err != nil {
+				return fmt.Errorf("timed out waiting for deployment %s to become healthy: %w", deploymentID, err)
+			}
+			return fmt.Errorf("timed out waiting for deployment %s to become healthy", deploymentID)
+		}
+		time.Sleep(pollInterval)
+	}
 }
 
 func (c *Client) StartSolr(accountName, deploymentID, node string) error {
@@ -278,6 +314,37 @@ func (c *Client) GetPlans(accountName, application, planType string, page int) (
 		}
 	}
 	return &out, nil
+}
+
+// GetAllPlans fetches every page of plans and returns them in a single PlansList.
+func (c *Client) GetAllPlans(accountName, application, planType string) (*PlansList, error) {
+	var allResults []Plan
+	seen := make(map[string]bool)
+	page := 1
+	for page <= 100 { // safety limit
+		out, err := c.GetPlans(accountName, application, planType, page)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range out.Results {
+			key := p.Plan
+			if key == "" {
+				key = p.Name
+			}
+			if !seen[key] {
+				seen[key] = true
+				allResults = append(allResults, p)
+			}
+		}
+		if len(out.Results) == 0 || out.Next == "" {
+			break
+		}
+		page++
+	}
+	return &PlansList{
+		Count:   int32(len(allResults)),
+		Results: allResults,
+	}, nil
 }
 
 type UsageList struct {
