@@ -1,4 +1,4 @@
-# Terraform Provider SearchStax (WIP)
+# Terraform Provider SearchStax
 <div align="center">
     <img src="https://www.searchstax.com/docs/wp-content/themes/docs/images/logo.svg" width="400" alt="SearchStax" />
     <br/>
@@ -9,8 +9,8 @@
 [![Tests](https://github.com/sadok-f/terraform-provider-searchstax/actions/workflows/test.yml/badge.svg)](https://github.com/sadok-f/terraform-provider-searchstax/actions/workflows/test.yml)
 </div>
 
-This repository represents an base code for a terraform provider for [SearchStax Cloud](https://www.searchstax.com/docs/searchstax-cloud-docs-home/).
-The code is still **WIP** and not published yet to the Terraform registry.
+A Terraform provider for [SearchStax Cloud](https://www.searchstax.com/docs/searchstax-cloud-docs-home/) that lets you
+manage deployments, users, backups, custom JARs, DNS records and more as code.
 
 ## Requirements
 
@@ -57,11 +57,15 @@ Your `<PATH>` may vary depending on how your Go environment variables are config
 
 ## Using the provider
 
+The provider is published on the [Terraform Registry](https://registry.terraform.io/providers/sadok-f/searchstax/latest).
+Add it to your configuration and run `terraform init`:
+
 ```hcl
 terraform {
   required_providers {
     searchstax = {
-      source = "hashicorp.com/sadok-f/searchstax"
+      source  = "sadok-f/searchstax"
+      version = "~> 0.1"
     }
   }
 }

@@ -23,6 +23,7 @@ description: |-
 ### Optional
 
 - `solr` (Boolean)
+- `triggers` (Map of String) Arbitrary map of values that, when changed, forces a new rolling restart. Use it to trigger a single restart when the custom jar list changes.
 - `zookeeper` (Boolean)
 
 ### Read-Only

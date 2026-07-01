@@ -184,14 +184,14 @@ type DeploymentUsersList struct {
 //   - The real API returns {"success":"true","users":{"<name>":{"roles":[...]}}}.
 //   - The mock API returns {"results":[{"username":"...","role":"..."}]}.
 func (l *DeploymentUsersList) UnmarshalJSON(data []byte) error {
-	var real struct {
+	var apiResp struct {
 		Users map[string]struct {
 			Roles []string `json:"roles"`
 		} `json:"users"`
 	}
-	if err := json.Unmarshal(data, &real); err == nil && real.Users != nil {
+	if err := json.Unmarshal(data, &apiResp); err == nil && apiResp.Users != nil {
 		l.Results = nil
-		for name, u := range real.Users {
+		for name, u := range apiResp.Users {
 			l.Results = append(l.Results, DeploymentUser{
 				Username: name,
 				Role:     canonicalRole(u.Roles),

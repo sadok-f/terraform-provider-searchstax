@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     searchstax = {
-      source = "hashicorp.com/sadok-f/searchstax"
+      source = "sadok-f/searchstax"
     }
   }
 }

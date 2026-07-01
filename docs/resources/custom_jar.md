@@ -21,6 +21,10 @@ description: |-
 - `deployment_uid` (String)
 - `name` (String)
 
+### Optional
+
+- `file_path` (String)
+
 ### Read-Only
 
 - `id` (String) The ID of this resource.
