@@ -2,27 +2,47 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func (c *Client) EnableBasicAuth(accountName, deploymentID string) (bool, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/enable/", c.HostURL, accountName, deploymentID), nil)
-	if err != nil {
-		return false, err
+	const (
+		attempts = 10
+		backoff  = 15 * time.Second
+	)
+
+	var lastErr error
+	for i := 0; i < attempts; i++ {
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/enable/", c.HostURL, accountName, deploymentID), nil)
+		if err != nil {
+			return false, err
+		}
+		body, err := c.doRequest(req)
+		if err != nil {
+			// Retry on transient (5xx / network) errors — the cluster may be
+			// briefly unavailable while a restart is in progress.
+			if isTransient(err) {
+				lastErr = err
+				if i < attempts-1 {
+					time.Sleep(backoff)
+				}
+				continue
+			}
+			return false, err
+		}
+		var resp struct {
+			Enabled bool `json:"enabled"`
+		}
+		if err := json.Unmarshal(body, &resp); err != nil {
+			return false, err
+		}
+		return resp.Enabled, nil
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
-		return false, err
-	}
-	var resp struct {
-		Enabled bool `json:"enabled"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return false, err
-	}
-	return resp.Enabled, nil
+	return false, fmt.Errorf("basic auth not enabled after %d attempts: %w", attempts, lastErr)
 }
 
 func (c *Client) DisableBasicAuth(accountName, deploymentID string) (bool, error) {
@@ -32,6 +52,14 @@ func (c *Client) DisableBasicAuth(accountName, deploymentID string) (bool, error
 	}
 	body, err := c.doRequest(req)
 	if err != nil {
+		// The real API returns 400 "No basic authentication enabled for this
+		// deployment." when auth is already disabled. Treat that as success so
+		// destroy is idempotent.
+		var httpErr *HTTPStatusError
+		if errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusBadRequest &&
+			strings.Contains(httpErr.Body, "No basic authentication enabled") {
+			return false, nil
+		}
 		return false, err
 	}
 	var resp struct {

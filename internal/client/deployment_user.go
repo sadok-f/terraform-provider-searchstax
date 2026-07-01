@@ -56,18 +56,44 @@ func (c *Client) CreateDeploymentUser(deploymentUser DeploymentUser, accountName
 		}
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/add-user/", c.HostURL, accountName, deploymentID), strings.NewReader(string(rb)))
-	if err != nil {
+	// Enabling basic auth triggers a Solr restart that may still be settling
+	// when add-user runs, causing transient 5xx responses. Retry on transient
+	// errors to ride out the restart (skip the long backoff against the mock).
+	const (
+		attempts = 10
+		backoff  = 15 * time.Second
+	)
+
+	var body []byte
+	var lastErr error
+	for i := 0; i < attempts; i++ {
+		req, reqErr := http.NewRequest("POST", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/add-user/", c.HostURL, accountName, deploymentID), strings.NewReader(string(rb)))
+		if reqErr != nil {
+			return nil, &Error{
+				err:     reqErr,
+				context: "NewRequest",
+			}
+		}
+
+		body, err = c.doRequest(req)
+		if err == nil {
+			break
+		}
+		if isTransient(err) && !c.isMockHost() {
+			lastErr = err
+			if i < attempts-1 {
+				time.Sleep(backoff)
+			}
+			continue
+		}
 		return nil, &Error{
 			err:     err,
-			context: "NewRequest",
+			context: "doRequest",
 		}
 	}
-
-	body, err := c.doRequest(req)
 	if err != nil {
 		return nil, &Error{
-			err:     err,
+			err:     lastErr,
 			context: "doRequest",
 		}
 	}

@@ -153,28 +153,58 @@ func (c *Client) RollingRestart(accountName, deploymentID string, reqBody Rollin
 	return &out, nil
 }
 
-// waitForDeploymentHealthy polls the deployment-health endpoint until the
-// deployment reports a healthy status ("OK" from the real API, "Healthy" from
-// the mock API) or until the timeout elapses.
+// waitForDeploymentHealthy waits for a rolling restart to complete. The
+// deployment-health endpoint can still report "OK" for a short window right
+// after a restart is triggered, so this first waits for the restart to begin
+// (health leaves the healthy state) before waiting for it to recover. It polls
+// every pollInterval and reports the deployment healthy when the status is
+// "OK" (real API) or "Healthy" (mock API).
 func (c *Client) waitForDeploymentHealthy(accountName, deploymentID string) error {
 	const (
-		maxWait      = time.Hour
-		pollInterval = 5 * time.Second
+		pollInterval = 10 * time.Second
+		startGrace   = 90 * time.Second // max wait for the restart to begin
+		maxWait      = 30 * time.Minute // max wait for the restart to finish
 	)
+
+	isHealthy := func() bool {
+		health, err := c.GetDeploymentHealth(accountName, deploymentID)
+		if err != nil {
+			// A transient error / 502 while the cluster is restarting counts
+			// as "not healthy".
+			return false
+		}
+		switch strings.ToLower(health.Status) {
+		case "ok", "healthy":
+			return true
+		}
+		return false
+	}
+
+	// The mock API always reports the deployment as healthy, so there is no
+	// restart transition to observe; return immediately for acceptance tests.
+	if c.isMockHost() {
+		return nil
+	}
+
+	// Phase 1: wait for the rolling restart to actually begin. If the
+	// deployment never leaves the healthy state within the grace window, assume
+	// the restart was quick and proceed.
+	graceDeadline := time.Now().Add(startGrace)
+	for time.Now().Before(graceDeadline) {
+		if !isHealthy() {
+			break
+		}
+		time.Sleep(pollInterval)
+	}
+
+	// Phase 2: wait until the deployment is healthy again.
 	deadline := time.Now().Add(maxWait)
 	for {
-		health, err := c.GetDeploymentHealth(accountName, deploymentID)
-		if err == nil {
-			switch strings.ToLower(health.Status) {
-			case "ok", "healthy":
-				return nil
-			}
+		if isHealthy() {
+			return nil
 		}
 		if time.Now().After(deadline) {
-			if err != nil {
-				return fmt.Errorf("timed out waiting for deployment %s to become healthy: %w", deploymentID, err)
-			}
-			return fmt.Errorf("timed out waiting for deployment %s to become healthy", deploymentID)
+			return fmt.Errorf("timed out after %s waiting for deployment %s to become healthy after rolling restart", maxWait, deploymentID)
 		}
 		time.Sleep(pollInterval)
 	}

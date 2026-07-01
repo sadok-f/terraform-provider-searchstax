@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -88,6 +89,21 @@ type HTTPStatusError struct {
 
 func (e *HTTPStatusError) Error() string {
 	return fmt.Sprintf("status: %d, body: %s", e.StatusCode, e.Body)
+}
+
+// isTransient reports whether err is worth retrying: an HTTP 5xx response
+// (e.g. a 502/500 returned while the cluster is briefly unavailable during a
+// restart) or a lower-level network error. HTTP 4xx responses are not retried.
+func isTransient(err error) bool {
+	if err == nil {
+		return false
+	}
+	var httpErr *HTTPStatusError
+	if errors.As(err, &httpErr) {
+		return httpErr.StatusCode >= 500
+	}
+	// Non-HTTP errors are typically network-level and worth retrying.
+	return true
 }
 
 // doRequest - send the Request.
