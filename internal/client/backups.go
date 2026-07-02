@@ -180,29 +180,27 @@ func (c *Client) GetBackupSchedules(accountName, deploymentID string) (*BackupSc
 	return &out, nil
 }
 
-func (c *Client) CreateBackupSchedule(accountName, deploymentID string, reqBody map[string]any) error {
+func (c *Client) CreateBackupSchedule(accountName, deploymentID string, reqBody map[string]any) (*BackupSchedule, error) {
 	rb, err := json.Marshal(reqBody)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/account/%s/deployment/%s/backup/schedule/", c.HostURL, accountName, deploymentID), strings.NewReader(string(rb)))
 	if err != nil {
-		return err
+		return nil, err
 	}
+	// A non-2xx response is already surfaced as an error by doRequest, so a
+	// successful call here means the schedule was created. The API returns the
+	// created schedule object rather than a {"created": true} flag.
 	body, err := c.doRequest(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var resp struct {
-		Created bool `json:"created"`
+	out := BackupSchedule{}
+	if err := json.Unmarshal(body, &out); err != nil {
+		return nil, err
 	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Created {
-		return fmt.Errorf("backup schedule not created")
-	}
-	return nil
+	return &out, nil
 }
 
 func (c *Client) DeleteBackupSchedule(accountName, deploymentID, scheduleUID string) error {

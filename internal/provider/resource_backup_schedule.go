@@ -98,7 +98,8 @@ func (r *backupScheduleResource) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("Error building backup schedule", err.Error())
 		return
 	}
-	if err := r.client.CreateBackupSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), body); err != nil {
+	created, err := r.client.CreateBackupSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), body)
+	if err != nil {
 		resp.Diagnostics.AddError("Error creating backup schedule", err.Error())
 		return
 	}
@@ -106,8 +107,16 @@ func (r *backupScheduleResource) Create(ctx context.Context, req resource.Create
 	if !plan.Time.IsNull() {
 		timeVal = plan.Time.ValueString()
 	}
-	scheduleID, ok := r.findSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), days, plan.Retention.ValueInt64(), timeVal)
-	if !ok {
+	scheduleID := ""
+	if created != nil {
+		scheduleID = created.ID
+	}
+	if scheduleID == "" {
+		if id, ok := r.findSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), days, plan.Retention.ValueInt64(), timeVal); ok {
+			scheduleID = id
+		}
+	}
+	if scheduleID == "" {
 		scheduleID = "mock-schedule"
 	}
 	plan.ScheduleID = types.StringValue(scheduleID)
