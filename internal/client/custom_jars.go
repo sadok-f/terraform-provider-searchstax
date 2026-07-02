@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,10 @@ type CustomJar struct {
 	// (as required by the real API). When empty, it falls back to a JSON
 	// metadata upload (used by the mock API in acceptance tests).
 	FilePath string `json:"-"`
+	// SourceURL is an http(s) URL to download the .jar file from. When set
+	// (and FilePath is empty), UploadCustomJar downloads the file from the URL
+	// and uploads it via multipart/form-data, just like a local file.
+	SourceURL string `json:"-"`
 }
 
 // UnmarshalJSON supports both response shapes for the custom-jars endpoint:
@@ -78,17 +83,76 @@ func (c *Client) GetCustomJars(accountName, deploymentID string) (*CustomJarsLis
 }
 
 // UploadCustomJar uploads a custom jar to a deployment.
-// When jar.FilePath is set, the actual .jar file is uploaded using a
-// multipart/form-data request with a "file" form field, as required by the
-// SearchStax API. When FilePath is empty, a JSON metadata payload is sent
-// instead (used by the mock API in acceptance tests).
+// The source of the .jar file is chosen in this order:
+//   - jar.FilePath set: upload the local file via multipart/form-data.
+//   - jar.SourceURL set: download the file from the http(s) URL, then upload
+//     it via multipart/form-data.
+//   - neither set: send a JSON metadata payload (used by the mock API in
+//     acceptance tests).
 func (c *Client) UploadCustomJar(accountName, deploymentID string, jar CustomJar) error {
 	url := fmt.Sprintf("%s/account/%s/deployment/%s/solr/custom-jars/", c.HostURL, accountName, deploymentID)
 
-	if jar.FilePath == "" {
+	switch {
+	case jar.FilePath != "":
+		return c.uploadCustomJarFile(url, jar.FilePath)
+	case jar.SourceURL != "":
+		return c.uploadCustomJarURL(url, jar.SourceURL, jar.Name)
+	default:
 		return c.uploadCustomJarJSON(url, jar)
 	}
-	return c.uploadCustomJarFile(url, jar.FilePath)
+}
+
+// uploadCustomJarURL downloads the .jar file from an http(s) URL and uploads
+// it to the deployment via multipart/form-data.
+func (c *Client) uploadCustomJarURL(url, sourceURL, name string) error {
+	u, err := neturl.Parse(sourceURL)
+	if err != nil {
+		return fmt.Errorf("parsing custom jar source_url %q: %w", sourceURL, err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("custom jar source_url must be an http or https URL, got %q", sourceURL)
+	}
+
+	getReq, err := http.NewRequest("GET", sourceURL, nil)
+	if err != nil {
+		return err
+	}
+	getResp, err := c.HTTPClient.Do(getReq)
+	if err != nil {
+		return fmt.Errorf("downloading custom jar from %q: %w", sourceURL, err)
+	}
+	defer getResp.Body.Close()
+	if getResp.StatusCode < 200 || getResp.StatusCode >= 300 {
+		return fmt.Errorf("downloading custom jar from %q: unexpected status %d", sourceURL, getResp.StatusCode)
+	}
+
+	filename := name
+	if filename == "" {
+		filename = filepath.Base(u.Path)
+	}
+
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	part, err := writer.CreateFormFile("file", filename)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(part, getResp.Body); err != nil {
+		return err
+	}
+	if err := writer.Close(); err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", url, &buf)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if _, err := c.doRequest(req); err != nil {
+		return err
+	}
+	return nil
 }
 
 // uploadCustomJarFile performs the multipart/form-data file upload.

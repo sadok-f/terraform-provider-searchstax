@@ -24,6 +24,7 @@ description: |-
 ### Optional
 
 - `file_path` (String)
+- `source_url` (String)
 
 ### Read-Only
 

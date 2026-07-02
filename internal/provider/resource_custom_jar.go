@@ -27,6 +27,7 @@ func (r *customJarResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 		"deployment_uid": schema.StringAttribute{Required: true},
 		"name":           schema.StringAttribute{Required: true},
 		"file_path":      schema.StringAttribute{Optional: true},
+		"source_url":     schema.StringAttribute{Optional: true},
 	}}
 }
 func (r *customJarResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -46,7 +47,7 @@ func (r *customJarResource) Create(ctx context.Context, req resource.CreateReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if err := r.client.UploadCustomJar(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), searchstaxClient.CustomJar{Name: plan.Name.ValueString(), FilePath: plan.FilePath.ValueString()}); err != nil {
+	if err := r.client.UploadCustomJar(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), searchstaxClient.CustomJar{Name: plan.Name.ValueString(), FilePath: plan.FilePath.ValueString(), SourceURL: plan.SourceURL.ValueString()}); err != nil {
 		resp.Diagnostics.AddError("Error uploading custom jar", err.Error())
 		return
 	}
@@ -103,4 +104,5 @@ type customJarResourceModel struct {
 	DeploymentUID types.String `tfsdk:"deployment_uid"`
 	Name          types.String `tfsdk:"name"`
 	FilePath      types.String `tfsdk:"file_path"`
+	SourceURL     types.String `tfsdk:"source_url"`
 }
