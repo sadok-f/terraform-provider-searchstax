@@ -29,7 +29,18 @@ func (c *Client) GetZookeeperConfigs(accountName, deploymentID string) (*Zookeep
 	if err != nil {
 		return nil, err
 	}
+	// The real API returns {"configs": ["name1", "name2"], "success": "true"};
+	// older mocks used a {"results": [{...}]} wrapper.
+	var named struct {
+		Configs []string `json:"configs"`
+	}
 	out := ZookeeperConfigsList{}
+	if err := json.Unmarshal(body, &named); err == nil && named.Configs != nil {
+		for _, name := range named.Configs {
+			out.Results = append(out.Results, ZookeeperConfig{Name: name})
+		}
+		return &out, nil
+	}
 	if err := json.Unmarshal(body, &out); err != nil {
 		return nil, err
 	}
@@ -47,21 +58,12 @@ func (c *Client) UploadZookeeperConfig(accountName, deploymentID string, cfg Zoo
 	if err != nil {
 		return nil, err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns {"configs": [...], "success": "true"}; a non-2xx status
+	// is already an error, so reaching here means the config was uploaded.
+	if _, err := c.doRequest(req); err != nil {
 		return nil, err
 	}
-	var resp struct {
-		Uploaded bool   `json:"uploaded"`
-		Name     string `json:"name"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, err
-	}
-	if !resp.Uploaded {
-		return nil, fmt.Errorf("zookeeper config not uploaded")
-	}
-	out := ZookeeperConfig{Name: resp.Name}
+	out := ZookeeperConfig{Name: cfg.Name}
 	return &out, nil
 }
 
@@ -74,9 +76,20 @@ func (c *Client) GetZookeeperConfig(accountName, deploymentID, name string) (*Zo
 	if err != nil {
 		return nil, err
 	}
-	out := ZookeeperConfig{}
-	if err := json.Unmarshal(body, &out); err != nil {
+	// The real API returns {"name": ..., "configs": [file paths], "success": ...};
+	// the "configs" field is the list of files in the config. Fall back to a
+	// "files" field for older mocks.
+	var raw struct {
+		Name    string   `json:"name"`
+		Configs []string `json:"configs"`
+		Files   []string `json:"files"`
+	}
+	if err := json.Unmarshal(body, &raw); err != nil {
 		return nil, err
+	}
+	out := ZookeeperConfig{Name: raw.Name, Files: raw.Files}
+	if len(raw.Configs) > 0 {
+		out.Files = raw.Configs
 	}
 	return &out, nil
 }
@@ -86,18 +99,10 @@ func (c *Client) DeleteZookeeperConfig(accountName, deploymentID, name string) e
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns {"message": ..., "success": "true"}; a non-2xx status
+	// is already an error, so reaching here means the config was deleted.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Deleted bool `json:"deleted"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Deleted {
-		return fmt.Errorf("zookeeper config not deleted")
 	}
 	return nil
 }

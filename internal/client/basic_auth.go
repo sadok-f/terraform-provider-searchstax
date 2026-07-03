@@ -21,8 +21,7 @@ func (c *Client) EnableBasicAuth(accountName, deploymentID string) (bool, error)
 		if err != nil {
 			return false, err
 		}
-		body, err := c.doRequest(req)
-		if err != nil {
+		if _, err := c.doRequest(req); err != nil {
 			// Retry on transient (5xx / network) errors — the cluster may be
 			// briefly unavailable while a restart is in progress.
 			if isTransient(err) {
@@ -34,13 +33,9 @@ func (c *Client) EnableBasicAuth(accountName, deploymentID string) (bool, error)
 			}
 			return false, err
 		}
-		var resp struct {
-			Enabled bool `json:"enabled"`
-		}
-		if err := json.Unmarshal(body, &resp); err != nil {
-			return false, err
-		}
-		return resp.Enabled, nil
+		// A successful (2xx) response means basic auth is enabled. The real API
+		// returns {"message": ..., "success": "true"}.
+		return true, nil
 	}
 	return false, fmt.Errorf("basic auth not enabled after %d attempts: %w", attempts, lastErr)
 }
@@ -50,8 +45,7 @@ func (c *Client) DisableBasicAuth(accountName, deploymentID string) (bool, error
 	if err != nil {
 		return false, err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	if _, err := c.doRequest(req); err != nil {
 		// The real API returns 400 "No basic authentication enabled for this
 		// deployment." when auth is already disabled. Treat that as success so
 		// destroy is idempotent.
@@ -62,13 +56,9 @@ func (c *Client) DisableBasicAuth(accountName, deploymentID string) (bool, error
 		}
 		return false, err
 	}
-	var resp struct {
-		Enabled bool `json:"enabled"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return false, err
-	}
-	return resp.Enabled, nil
+	// A successful (2xx) response means basic auth is now disabled. The real API
+	// returns {"message": ..., "success": "true"}.
+	return false, nil
 }
 
 type SetBasicAuthPasswordRequest struct {
@@ -85,18 +75,10 @@ func (c *Client) SetBasicAuthPassword(accountName, deploymentID string, reqBody 
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns {"message": ..., "success": "true"}; a non-2xx status
+	// is already an error, so reaching here means the password was updated.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Updated bool `json:"updated"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Updated {
-		return fmt.Errorf("basic auth password not updated")
 	}
 	return nil
 }
@@ -121,18 +103,10 @@ func (c *Client) SetBasicAuthRole(accountName, deploymentID string, reqBody SetB
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns {"message": ..., "success": "true"}; a non-2xx status
+	// is already an error, so reaching here means the role was updated.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Updated bool `json:"updated"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Updated {
-		return fmt.Errorf("basic auth role not updated")
 	}
 	return nil
 }

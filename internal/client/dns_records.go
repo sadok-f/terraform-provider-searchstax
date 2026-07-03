@@ -17,6 +17,21 @@ type DNSRecord struct {
 	TTL        string `json:"ttl"`
 }
 
+// UnmarshalJSON tolerates a "ttl" returned as either a JSON number (real API)
+// or a string, normalizing it to a string.
+func (d *DNSRecord) UnmarshalJSON(data []byte) error {
+	type alias DNSRecord
+	aux := &struct {
+		TTL json.RawMessage `json:"ttl,omitempty"`
+		*alias
+	}{alias: (*alias)(d)}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	d.TTL = coerceID(aux.TTL)
+	return nil
+}
+
 func (c *Client) GetDNSRecords(accountName string) (*DNSRecordsList, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/account/%s/dns-record/", c.HostURL, accountName), nil)
 	if err != nil {
@@ -67,16 +82,11 @@ func (c *Client) AssociateDNSRecord(accountName string, name string, reqBody Ass
 	if err != nil {
 		return nil, err
 	}
-	var resp struct {
-		Updated bool `json:"updated"`
-		DNSRecord
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
+	// The real API returns the updated DNS record object (no "updated" flag); a
+	// non-2xx status is already an error, so reaching here means it was updated.
+	out := DNSRecord{}
+	if err := json.Unmarshal(body, &out); err != nil {
 		return nil, err
 	}
-	if !resp.Updated {
-		return nil, fmt.Errorf("dns record not updated")
-	}
-	out := resp.DNSRecord
 	return &out, nil
 }

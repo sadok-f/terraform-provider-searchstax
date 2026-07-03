@@ -19,8 +19,8 @@ resource "searchstax_restore" "test" {
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("searchstax_restore.test", "backup_id", "27004"),
-					resource.TestCheckResourceAttrSet("searchstax_restore.test", "restore_id"),
-					resource.TestCheckResourceAttrSet("searchstax_restore.test", "status"),
+					resource.TestCheckResourceAttrSet("searchstax_restore.test", "message"),
+					resource.TestCheckResourceAttr("searchstax_restore.test", "status", "In Progress"),
 				),
 			},
 		},

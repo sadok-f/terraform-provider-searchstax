@@ -39,8 +39,8 @@ func (r *restoreResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
-		"restore_id": schema.StringAttribute{Computed: true},
-		"status":     schema.StringAttribute{Computed: true},
+		"message": schema.StringAttribute{Computed: true},
+		"status":  schema.StringAttribute{Computed: true},
 	}}
 }
 
@@ -74,19 +74,20 @@ func (r *restoreResource) Create(ctx context.Context, req resource.CreateRequest
 		resp.Diagnostics.AddError("Error creating restore", err.Error())
 		return
 	}
-	plan.RestoreID = types.StringValue(out.RestoreID)
-	if out.Status != "" {
-		plan.Status = types.StringValue(out.Status)
-	} else if !plan.DeploymentUID.IsNull() {
-		status, err := r.client.GetDeploymentRestoreStatus(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), reqBody)
-		if err == nil && status.Status != "" {
-			plan.Status = types.StringValue(status.Status)
+	message := out.Message
+	// For deployment restores, prefer the live status message so create and
+	// subsequent reads report the same value.
+	if !plan.DeploymentUID.IsNull() {
+		if status, err := r.client.GetDeploymentRestoreStatus(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), reqBody); err == nil && status.Message != "" {
+			message = status.Message
 		}
 	}
+	plan.Message = types.StringValue(message)
+	plan.Status = types.StringValue(restoreStatusFromMessage(message))
 	if plan.DeploymentUID.IsNull() {
-		plan.ID = types.StringValue(plan.AccountName.ValueString() + "/" + out.RestoreID)
+		plan.ID = types.StringValue(plan.AccountName.ValueString() + "/" + plan.BackupID.ValueString())
 	} else {
-		plan.ID = types.StringValue(plan.AccountName.ValueString() + "/" + plan.DeploymentUID.ValueString() + "/" + out.RestoreID)
+		plan.ID = types.StringValue(plan.AccountName.ValueString() + "/" + plan.DeploymentUID.ValueString() + "/" + plan.BackupID.ValueString())
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -109,7 +110,8 @@ func (r *restoreResource) Read(ctx context.Context, req resource.ReadRequest, re
 		resp.Diagnostics.AddError("Error reading restore status", err.Error())
 		return
 	}
-	state.Status = types.StringValue(out.Status)
+	state.Message = types.StringValue(out.Message)
+	state.Status = types.StringValue(restoreStatusFromMessage(out.Message))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -121,16 +123,34 @@ func (r *restoreResource) ImportState(ctx context.Context, req resource.ImportSt
 	parts := strings.Split(req.ID, "/")
 	if len(parts) == 2 {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("account_name"), parts[0])...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("restore_id"), parts[1])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("backup_id"), parts[1])...)
 		return
 	}
 	if len(parts) == 3 {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("account_name"), parts[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("deployment_uid"), parts[1])...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("restore_id"), parts[2])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("backup_id"), parts[2])...)
 		return
 	}
-	resp.Diagnostics.AddError("Unexpected Import Identifier", "Expected account_name/restore_id or account_name/deployment_uid/restore_id")
+	resp.Diagnostics.AddError("Unexpected Import Identifier", "Expected account_name/backup_id or account_name/deployment_uid/backup_id")
+}
+
+// restoreStatusFromMessage derives a coarse status from the message string the
+// SearchStax restore endpoints return.
+func restoreStatusFromMessage(message string) string {
+	m := strings.ToLower(message)
+	switch {
+	case message == "":
+		return ""
+	case strings.Contains(m, "in progress"):
+		return "In Progress"
+	case strings.Contains(m, "no restore"):
+		return "None"
+	case strings.Contains(m, "begun"), strings.Contains(m, "queue"), strings.Contains(m, "placed in the task"):
+		return "Queued"
+	default:
+		return "Unknown"
+	}
 }
 
 type restoreResourceModel struct {
@@ -138,6 +158,6 @@ type restoreResourceModel struct {
 	AccountName   types.String `tfsdk:"account_name"`
 	DeploymentUID types.String `tfsdk:"deployment_uid"`
 	BackupID      types.String `tfsdk:"backup_id"`
-	RestoreID     types.String `tfsdk:"restore_id"`
+	Message       types.String `tfsdk:"message"`
 	Status        types.String `tfsdk:"status"`
 }

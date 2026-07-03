@@ -31,8 +31,19 @@ func (c *Client) GetUsers() (*UsersList, error) {
 	}
 
 	out := UsersList{}
-	if err := json.Unmarshal(body, &out); err != nil {
+	// The real API wraps the list as {"success": true, "users": [...]}; the mock
+	// historically used {"results": [...]}. Accept either.
+	var wrapper struct {
+		Users   []User `json:"users"`
+		Results []User `json:"results"`
+	}
+	if err := json.Unmarshal(body, &wrapper); err != nil {
 		return nil, err
+	}
+	if len(wrapper.Users) > 0 {
+		out.Results = wrapper.Users
+	} else {
+		out.Results = wrapper.Results
 	}
 	return &out, nil
 }
@@ -53,18 +64,10 @@ func (c *Client) InviteUser(reqBody InviteUserRequest) error {
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns {"success": true, "message": ...}; a non-2xx status is
+	// already an error, so reaching here means the invite was sent.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Invited bool `json:"invited"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Invited {
-		return fmt.Errorf("user invite failed")
 	}
 	return nil
 }
@@ -83,18 +86,10 @@ func (c *Client) ChangeUserPassword(reqBody ChangeUserPasswordRequest) error {
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns {"success": true, "message": ...}; a non-2xx status is
+	// already an error, so reaching here means the password was changed.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Changed bool `json:"changed"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Changed {
-		return fmt.Errorf("password change failed")
 	}
 	return nil
 }
@@ -113,18 +108,10 @@ func (c *Client) SetUserRole(reqBody SetUserRoleRequest) error {
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns an array of per-user result objects; a non-2xx status
+	// is already an error, so reaching here means the role was updated.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Updated bool `json:"updated"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Updated {
-		return fmt.Errorf("set role failed")
 	}
 	return nil
 }
@@ -142,18 +129,11 @@ func (c *Client) DeleteUser(reqBody DeleteUserRequest) error {
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns {"id": ..., "success": true, "message": ...}; a
+	// non-2xx status is already an error, so reaching here means the user was
+	// deleted.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Deleted bool `json:"deleted"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Deleted {
-		return fmt.Errorf("delete user failed")
 	}
 	return nil
 }

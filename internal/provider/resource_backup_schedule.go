@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -63,7 +64,9 @@ func (r *backupScheduleResource) scheduleBody(ctx context.Context, plan backupSc
 	if !plan.Time.IsNull() {
 		body["time"] = plan.Time.ValueString()
 	}
-	if !plan.Frequency.IsNull() {
+	// frequency is a backup interval in hours; the API requires either time or
+	// frequency and rejects a frequency of 0, so only send it when positive.
+	if !plan.Frequency.IsNull() && plan.Frequency.ValueInt64() > 0 {
 		body["frequency"] = plan.Frequency.ValueInt64()
 	}
 	if !plan.Collections.IsNull() {
@@ -74,13 +77,23 @@ func (r *backupScheduleResource) scheduleBody(ctx context.Context, plan backupSc
 	return body, days, nil
 }
 
+// normalizeTime trims an optional seconds component so that a config value of
+// "10:00" matches an API value of "10:00:00".
+func normalizeTime(t string) string {
+	parts := strings.Split(t, ":")
+	if len(parts) >= 2 {
+		return parts[0] + ":" + parts[1]
+	}
+	return t
+}
+
 func (r *backupScheduleResource) findSchedule(accountName, deploymentUID string, days []string, retention int64, time string) (string, bool) {
 	list, err := r.client.GetBackupSchedules(accountName, deploymentUID)
 	if err != nil {
 		return "", false
 	}
 	for _, s := range list.Results {
-		if int64(s.Retention) == retention && s.Time == time && reflect.DeepEqual(s.Days, days) {
+		if int64(s.Retention) == retention && normalizeTime(s.Time) == normalizeTime(time) && reflect.DeepEqual(s.Days, days) {
 			return s.ID, true
 		}
 	}
@@ -98,23 +111,20 @@ func (r *backupScheduleResource) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("Error building backup schedule", err.Error())
 		return
 	}
-	created, err := r.client.CreateBackupSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), body)
-	if err != nil {
-		resp.Diagnostics.AddError("Error creating backup schedule", err.Error())
+	if err := r.client.CreateBackupSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), body); err != nil {
+		payload, _ := json.Marshal(body)
+		resp.Diagnostics.AddError("Error creating backup schedule", fmt.Sprintf("%s\nrequest body: %s", err.Error(), payload))
 		return
 	}
 	timeVal := ""
 	if !plan.Time.IsNull() {
 		timeVal = plan.Time.ValueString()
 	}
+	// The create response does not include the schedule id, so look it up from
+	// the schedule list by matching the attributes we just submitted.
 	scheduleID := ""
-	if created != nil {
-		scheduleID = created.ID
-	}
-	if scheduleID == "" {
-		if id, ok := r.findSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), days, plan.Retention.ValueInt64(), timeVal); ok {
-			scheduleID = id
-		}
+	if id, ok := r.findSchedule(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), days, plan.Retention.ValueInt64(), timeVal); ok {
+		scheduleID = id
 	}
 	if scheduleID == "" {
 		scheduleID = "mock-schedule"
@@ -141,7 +151,7 @@ func (r *backupScheduleResource) Read(ctx context.Context, req resource.ReadRequ
 			resp.Diagnostics.Append(diags...)
 			state.Days = days
 			state.Retention = types.Int64Value(int64(s.Retention))
-			state.Time = types.StringValue(s.Time)
+			state.Time = types.StringValue(normalizeTime(s.Time))
 			state.ID = types.StringValue(state.AccountName.ValueString() + "/" + state.DeploymentUID.ValueString() + "/" + s.ID)
 			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 			return
@@ -155,7 +165,71 @@ func (r *backupScheduleResource) Read(ctx context.Context, req resource.ReadRequ
 	resp.State.RemoveResource(ctx)
 }
 
-func (r *backupScheduleResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+// resolveScheduleID finds the id of the schedule recorded in state, preferring
+// an exact id match and falling back to the schedule attributes (the API allows
+// only one schedule per day/time).
+func (r *backupScheduleResource) resolveScheduleID(ctx context.Context, state backupScheduleResourceModel) (string, bool) {
+	list, err := r.client.GetBackupSchedules(state.AccountName.ValueString(), state.DeploymentUID.ValueString())
+	if err != nil {
+		return "", false
+	}
+	for _, s := range list.Results {
+		if s.ID == state.ScheduleID.ValueString() {
+			return s.ID, true
+		}
+	}
+	var days []string
+	_ = state.Days.ElementsAs(ctx, &days, false)
+	timeVal := ""
+	if !state.Time.IsNull() {
+		timeVal = state.Time.ValueString()
+	}
+	for _, s := range list.Results {
+		if normalizeTime(s.Time) == normalizeTime(timeVal) && reflect.DeepEqual(s.Days, days) {
+			return s.ID, true
+		}
+	}
+	return "", false
+}
+
+func (r *backupScheduleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state backupScheduleResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	accountName := plan.AccountName.ValueString()
+	deploymentUID := plan.DeploymentUID.ValueString()
+	// The backup schedule API has no update endpoint, so apply changes by
+	// deleting the existing schedule and recreating it with the new values.
+	if id, ok := r.resolveScheduleID(ctx, state); ok {
+		if err := r.client.DeleteBackupSchedule(accountName, deploymentUID, id); err != nil {
+			resp.Diagnostics.AddError("Error updating backup schedule", err.Error())
+			return
+		}
+	}
+	body, days, err := r.scheduleBody(ctx, plan)
+	if err != nil {
+		resp.Diagnostics.AddError("Error building backup schedule", err.Error())
+		return
+	}
+	if err := r.client.CreateBackupSchedule(accountName, deploymentUID, body); err != nil {
+		payload, _ := json.Marshal(body)
+		resp.Diagnostics.AddError("Error updating backup schedule", fmt.Sprintf("%s\nrequest body: %s", err.Error(), payload))
+		return
+	}
+	timeVal := ""
+	if !plan.Time.IsNull() {
+		timeVal = plan.Time.ValueString()
+	}
+	scheduleID := "mock-schedule"
+	if id, ok := r.findSchedule(accountName, deploymentUID, days, plan.Retention.ValueInt64(), timeVal); ok {
+		scheduleID = id
+	}
+	plan.ScheduleID = types.StringValue(scheduleID)
+	plan.ID = types.StringValue(accountName + "/" + deploymentUID + "/" + scheduleID)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *backupScheduleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -164,7 +238,43 @@ func (r *backupScheduleResource) Delete(ctx context.Context, req resource.Delete
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if err := r.client.DeleteBackupSchedule(state.AccountName.ValueString(), state.DeploymentUID.ValueString(), state.ScheduleID.ValueString()); err != nil {
+	accountName := state.AccountName.ValueString()
+	deploymentUID := state.DeploymentUID.ValueString()
+	list, err := r.client.GetBackupSchedules(accountName, deploymentUID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error deleting backup schedule", err.Error())
+		return
+	}
+	// The stored schedule_id may be stale or a placeholder (e.g. "mock-schedule"
+	// written by an earlier create when the schedule list was unavailable).
+	// Resolve the real id: prefer an exact id match, otherwise match on the
+	// schedule attributes recorded in state.
+	scheduleID := ""
+	for _, s := range list.Results {
+		if s.ID == state.ScheduleID.ValueString() {
+			scheduleID = s.ID
+			break
+		}
+	}
+	if scheduleID == "" {
+		var days []string
+		_ = state.Days.ElementsAs(ctx, &days, false)
+		timeVal := ""
+		if !state.Time.IsNull() {
+			timeVal = state.Time.ValueString()
+		}
+		for _, s := range list.Results {
+			if int64(s.Retention) == state.Retention.ValueInt64() && normalizeTime(s.Time) == normalizeTime(timeVal) && reflect.DeepEqual(s.Days, days) {
+				scheduleID = s.ID
+				break
+			}
+		}
+	}
+	if scheduleID == "" {
+		// No matching schedule remains; treat it as already deleted.
+		return
+	}
+	if err := r.client.DeleteBackupSchedule(accountName, deploymentUID, scheduleID); err != nil {
 		resp.Diagnostics.AddError("Error deleting backup schedule", err.Error())
 	}
 }

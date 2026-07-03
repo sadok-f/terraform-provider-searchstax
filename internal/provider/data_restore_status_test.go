@@ -17,7 +17,7 @@ func TestAccRestoreStatusDataSource(t *testing.T) {
   backup_id      = "27004"
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.searchstax_restore_status.test", "restore_id", "r-27004"),
+					resource.TestCheckResourceAttr("data.searchstax_restore_status.test", "message", "Backup Restore in Progress"),
 					resource.TestCheckResourceAttr("data.searchstax_restore_status.test", "status", "In Progress"),
 				),
 			},

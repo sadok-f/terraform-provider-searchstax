@@ -24,8 +24,7 @@ func (d *zookeeperConfigsDataSource) Schema(_ context.Context, _ datasource.Sche
 		"account_name":   schema.StringAttribute{Required: true},
 		"deployment_uid": schema.StringAttribute{Required: true},
 		"configs": schema.ListNestedAttribute{Computed: true, NestedObject: schema.NestedAttributeObject{Attributes: map[string]schema.Attribute{
-			"name":    schema.StringAttribute{Computed: true},
-			"created": schema.StringAttribute{Computed: true},
+			"name": schema.StringAttribute{Computed: true},
 		}}},
 	}}
 }
@@ -54,7 +53,7 @@ func (d *zookeeperConfigsDataSource) Read(ctx context.Context, req datasource.Re
 	state.ID = types.StringValue("placeholder")
 	state.Configs = nil
 	for _, c := range out.Results {
-		state.Configs = append(state.Configs, zookeeperConfigModel{Name: types.StringValue(c.Name), Created: types.StringValue(c.Created)})
+		state.Configs = append(state.Configs, zookeeperConfigModel{Name: types.StringValue(c.Name)})
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -66,6 +65,5 @@ type zookeeperConfigsDataSourceModel struct {
 	Configs       []zookeeperConfigModel `tfsdk:"configs"`
 }
 type zookeeperConfigModel struct {
-	Name    types.String `tfsdk:"name"`
-	Created types.String `tfsdk:"created"`
+	Name types.String `tfsdk:"name"`
 }

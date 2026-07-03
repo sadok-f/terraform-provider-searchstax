@@ -16,7 +16,7 @@ func TestAccAlertsDataSource(t *testing.T) {
   deployment_uid = "ss123456"
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.searchstax_alerts.test", "alerts.#", "0"),
+					resource.TestCheckResourceAttr("data.searchstax_alerts.test", "alerts.#", "1"),
 				),
 			},
 		},

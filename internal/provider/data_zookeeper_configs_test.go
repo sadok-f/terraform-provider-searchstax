@@ -18,7 +18,6 @@ func TestAccZookeeperConfigsDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.searchstax_zookeeper_configs.test", "configs.#", "1"),
 					resource.TestCheckResourceAttr("data.searchstax_zookeeper_configs.test", "configs.0.name", "test_config"),
-					resource.TestCheckResourceAttr("data.searchstax_zookeeper_configs.test", "configs.0.created", "2026-04-28T00:00:00Z"),
 				),
 			},
 		},

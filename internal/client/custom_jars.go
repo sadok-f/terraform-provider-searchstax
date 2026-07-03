@@ -198,18 +198,10 @@ func (c *Client) uploadCustomJarJSON(url string, jar CustomJar) error {
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns the updated jar list; a non-2xx status is already an
+	// error, so reaching here means the jar was uploaded.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Uploaded bool `json:"uploaded"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Uploaded {
-		return fmt.Errorf("custom jar not uploaded")
 	}
 	return nil
 }

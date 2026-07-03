@@ -30,5 +30,4 @@ description: |-
 
 Read-Only:
 
-- `created` (String)
 - `name` (String)

@@ -56,6 +56,10 @@ func (d *authTokenDataSource) Read(ctx context.Context, _ datasource.ReadRequest
 		state.Valid = types.BoolValue(verify.Valid)
 		if verify.TokenExpiresInSeconds > 0 {
 			state.ExpiresInSeconds = types.Int64Value(verify.TokenExpiresInSeconds)
+		} else if verify.Token.DurationDays > 0 {
+			// The real API reports the token lifetime as duration_days rather
+			// than an explicit seconds value.
+			state.ExpiresInSeconds = types.Int64Value(int64(verify.Token.DurationDays) * 86400)
 		}
 		if verify.Token.Expires != "" {
 			state.TokenExpiresAt = types.StringValue(verify.Token.Expires)

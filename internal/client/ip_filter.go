@@ -29,8 +29,10 @@ func (c *Client) GetIPFilters(accountName, deploymentID string) (*IPFiltersList,
 	if err != nil {
 		return nil, err
 	}
+	// The real API returns a bare JSON array; decodeResults also tolerates a
+	// {"results": [...]} wrapper.
 	out := IPFiltersList{}
-	if err := json.Unmarshal(body, &out); err != nil {
+	if err := decodeResults(body, &out.Results); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -43,11 +45,11 @@ type IPFilterUpsertRequest struct {
 }
 
 func (c *Client) AddIPFilter(accountName, deploymentID string, reqBody IPFilterUpsertRequest) error {
-	return c.ipFilterAction("add-cidr-ip", accountName, deploymentID, reqBody, "added")
+	return c.ipFilterAction("add-cidr-ip", accountName, deploymentID, reqBody)
 }
 
 func (c *Client) UpdateIPFilter(accountName, deploymentID string, reqBody IPFilterUpsertRequest) error {
-	return c.ipFilterAction("update-cidr-ip", accountName, deploymentID, reqBody, "updated")
+	return c.ipFilterAction("update-cidr-ip", accountName, deploymentID, reqBody)
 }
 
 type IPFilterDeleteRequest struct {
@@ -63,23 +65,15 @@ func (c *Client) DeleteIPFilter(accountName, deploymentID string, reqBody IPFilt
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API confirms with {"detail": null, "success": true}; a non-2xx
+	// status is already an error, so reaching here means the filter was deleted.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Deleted bool `json:"deleted"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Deleted {
-		return fmt.Errorf("ip filter not deleted")
 	}
 	return nil
 }
 
-func (c *Client) ipFilterAction(action, accountName, deploymentID string, reqBody IPFilterUpsertRequest, expectKey string) error {
+func (c *Client) ipFilterAction(action, accountName, deploymentID string, reqBody IPFilterUpsertRequest) error {
 	rb, err := json.Marshal(reqBody)
 	if err != nil {
 		return err
@@ -88,17 +82,10 @@ func (c *Client) ipFilterAction(action, accountName, deploymentID string, reqBod
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API confirms with {"detail": null, "success": true}; a non-2xx
+	// status is already an error, so reaching here means the action succeeded.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	// mock uses one of: {"added":true}, {"updated":true}
-	var m map[string]bool
-	if err := json.Unmarshal(body, &m); err != nil {
-		return err
-	}
-	if !m[expectKey] {
-		return fmt.Errorf("ip filter action %s failed", action)
 	}
 	return nil
 }

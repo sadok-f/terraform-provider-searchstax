@@ -16,7 +16,7 @@ func TestAccDeploymentHealthDataSource(t *testing.T) {
   deployment_uid = "ss123456"
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.searchstax_deployment_health.test", "status", "Healthy"),
+					resource.TestCheckResourceAttr("data.searchstax_deployment_health.test", "status", "OK"),
 				),
 			},
 		},

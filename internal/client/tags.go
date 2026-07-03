@@ -40,18 +40,10 @@ func (c *Client) AddOrUpdateTags(accountName, deploymentID string, reqBody Updat
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns the updated {"deployment", "tags"} object; a non-2xx
+	// status is already an error, so reaching here means the tags were saved.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Updated bool `json:"updated"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Updated {
-		return fmt.Errorf("tags not updated")
 	}
 	return nil
 }
@@ -65,18 +57,10 @@ func (c *Client) DeleteTags(accountName, deploymentID string, reqBody UpdateTags
 	if err != nil {
 		return err
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
+	// The real API returns the updated {"deployment", "tags"} object; a non-2xx
+	// status is already an error, so reaching here means the tags were removed.
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	var resp struct {
-		Updated bool `json:"updated"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-	if !resp.Updated {
-		return fmt.Errorf("tags not deleted")
 	}
 	return nil
 }
@@ -116,8 +100,10 @@ func (c *Client) GetDeploymentsByTag(accountName string, reqBody GetDeploymentsB
 	if err != nil {
 		return nil, err
 	}
+	// The real API returns a bare JSON array; decodeResults also tolerates a
+	// {"results": [...]} wrapper.
 	out := DeploymentsByTagList{}
-	if err := json.Unmarshal(body, &out); err != nil {
+	if err := decodeResults(body, &out.Results); err != nil {
 		return nil, err
 	}
 	return &out, nil

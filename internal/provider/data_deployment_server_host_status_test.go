@@ -18,7 +18,7 @@ func TestAccDeploymentServerHostStatusDataSource(t *testing.T) {
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.searchstax_deployment_server_host_status.test", "node", "ss123456-1"),
-					resource.TestCheckResourceAttr("data.searchstax_deployment_server_host_status.test", "status", "Up"),
+					resource.TestCheckResourceAttr("data.searchstax_deployment_server_host_status.test", "status", "OK"),
 				),
 			},
 		},

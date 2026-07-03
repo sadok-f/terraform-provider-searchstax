@@ -25,7 +25,7 @@ func (d *restoreStatusDataSource) Schema(_ context.Context, _ datasource.SchemaR
 		"account_name":   schema.StringAttribute{Required: true},
 		"deployment_uid": schema.StringAttribute{Required: true},
 		"backup_id":      schema.StringAttribute{Required: true},
-		"restore_id":     schema.StringAttribute{Computed: true},
+		"message":        schema.StringAttribute{Computed: true},
 		"status":         schema.StringAttribute{Computed: true},
 	}}
 }
@@ -55,8 +55,8 @@ func (d *restoreStatusDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 	state.ID = types.StringValue(state.AccountName.ValueString() + "/" + state.DeploymentUID.ValueString() + "/" + state.BackupID.ValueString())
-	state.RestoreID = types.StringValue(out.RestoreID)
-	state.Status = types.StringValue(out.Status)
+	state.Message = types.StringValue(out.Message)
+	state.Status = types.StringValue(restoreStatusFromMessage(out.Message))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -65,6 +65,6 @@ type restoreStatusDataSourceModel struct {
 	AccountName   types.String `tfsdk:"account_name"`
 	DeploymentUID types.String `tfsdk:"deployment_uid"`
 	BackupID      types.String `tfsdk:"backup_id"`
-	RestoreID     types.String `tfsdk:"restore_id"`
+	Message       types.String `tfsdk:"message"`
 	Status        types.String `tfsdk:"status"`
 }
