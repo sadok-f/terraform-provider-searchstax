@@ -35,3 +35,7 @@ website/vendor
 *.winfile eol=crlf
 
 .tmp_mock/
+
+# Node.js (semantic-release tooling)
+node_modules/
+

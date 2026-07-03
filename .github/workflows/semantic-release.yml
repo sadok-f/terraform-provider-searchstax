@@ -1,0 +1,53 @@
+# Semantic Release workflow.
+#
+# On every push to main this computes the next Semantic Version from the
+# Conventional Commit history and, when a release is warranted, creates a
+# matching "vX.Y.Z" tag (see tagFormat in .releaserc.json). Pushing that tag
+# triggers the existing GoReleaser "Release" workflow, which builds, signs and
+# publishes the provider artifacts.
+#
+# Required repository secret:
+#   RELEASE_TOKEN - a Personal Access Token (classic: "repo" scope, or a
+#                   fine-grained token with "Contents: read and write"). This is
+#                   required so the pushed tag triggers the Release workflow; the
+#                   default GITHUB_TOKEN cannot trigger other workflows.
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+# semantic-release pushes the release tag and the CHANGELOG release commit.
+permissions:
+  contents: write
+
+# Never run two releases at the same time.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history is required to analyze commits since the last tag.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: npx semantic-release
