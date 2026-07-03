@@ -31,6 +31,10 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    # Skip the workflow's own release commit so it does not run again as a
+    # no-op. (We avoid "[skip ci]" in that commit because it would also block
+    # the tag push from triggering the GoReleaser Release workflow.)
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

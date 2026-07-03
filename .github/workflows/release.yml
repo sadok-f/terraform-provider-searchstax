@@ -7,6 +7,10 @@ on:
   push:
     tags:
       - 'v*'
+  # Allow re-running the release for an existing tag from the Actions UI
+  # (Run workflow -> select the tag). Useful when a tag was created but the
+  # release did not build.
+  workflow_dispatch:
 
 # Releases need permissions to read and write the repository contents.
 # GitHub considers creating releases and uploading assets as writing contents.
