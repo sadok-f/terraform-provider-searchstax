@@ -3,12 +3,18 @@
 page_title: "searchstax_deployment Resource - terraform-provider-searchstax"
 subcategory: ""
 description: |-
-  
+  Manages a SearchStax Solr deployment (cluster).
+  ~> Changing an existing deployment. The SearchStax Provisioning API does not expose an endpoint to update deployment settings in place. Core attributes (plan, region_id, application_version, cloud_provider_id, account_name, ...) are therefore replacement-forcing: changing them destroys and recreates the cluster and all of its data. Plan carefully before applying such a change.
+  ~> termination_lock cannot be toggled through this provider. It is a Dashboard-only control in the SearchStax console. If the configured value differs from the deployment's actual state, terraform plan will keep showing a diff that never converges. To resolve it, change the Termination Lock in the SearchStax Dashboard and set termination_lock in your configuration to the same value.
 ---
 
 # searchstax_deployment (Resource)
 
+Manages a SearchStax Solr deployment (cluster).
 
+~> **Changing an existing deployment.** The SearchStax Provisioning API does not expose an endpoint to update deployment settings in place. Core attributes (`plan`, `region_id`, `application_version`, `cloud_provider_id`, `account_name`, ...) are therefore replacement-forcing: changing them destroys and recreates the cluster and all of its data. Plan carefully before applying such a change.
+
+~> **`termination_lock` cannot be toggled through this provider.** It is a Dashboard-only control in the SearchStax console. If the configured value differs from the deployment's actual state, `terraform plan` will keep showing a diff that never converges. To resolve it, change the Termination Lock in the SearchStax Dashboard and set `termination_lock` in your configuration to the same value.
 
 
 
@@ -25,7 +31,7 @@ description: |-
 - `plan` (String)
 - `plan_type` (String)
 - `region_id` (String)
-- `termination_lock` (Boolean)
+- `termination_lock` (Boolean) Whether the deployment is shielded from API deletion. **This can only be changed from the SearchStax Dashboard, not through the API or this provider.** Set it to match the deployment's actual state to avoid a perpetual plan diff; a change here is not pushed to SearchStax.
 
 ### Optional
 

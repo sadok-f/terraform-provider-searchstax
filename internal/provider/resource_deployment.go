@@ -60,6 +60,17 @@ func (d *deploymentResource) Metadata(_ context.Context, req resource.MetadataRe
 // Schema defines the schema for the resource.
 func (d *deploymentResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a SearchStax Solr deployment (cluster).\n\n" +
+			"~> **Changing an existing deployment.** The SearchStax Provisioning API does not expose " +
+			"an endpoint to update deployment settings in place. Core attributes (`plan`, `region_id`, " +
+			"`application_version`, `cloud_provider_id`, `account_name`, ...) are therefore " +
+			"replacement-forcing: changing them destroys and recreates the cluster and all of its data. " +
+			"Plan carefully before applying such a change.\n\n" +
+			"~> **`termination_lock` cannot be toggled through this provider.** It is a Dashboard-only " +
+			"control in the SearchStax console. If the configured value differs from the deployment's " +
+			"actual state, `terraform plan` will keep showing a diff that never converges. To resolve it, " +
+			"change the Termination Lock in the SearchStax Dashboard and set `termination_lock` in your " +
+			"configuration to the same value.",
 		Attributes: map[string]schema.Attribute{
 			// id is required by the testing framework
 			"id": schema.StringAttribute{
@@ -112,6 +123,10 @@ func (d *deploymentResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"termination_lock": schema.BoolAttribute{
 				Required: true,
+				MarkdownDescription: "Whether the deployment is shielded from API deletion. " +
+					"**This can only be changed from the SearchStax Dashboard, not through the API or this " +
+					"provider.** Set it to match the deployment's actual state to avoid a perpetual plan diff; " +
+					"a change here is not pushed to SearchStax.",
 			},
 			"private_vpc": schema.Int64Attribute{
 				Optional: true,
