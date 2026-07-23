@@ -1,3 +1,10 @@
+## [0.1.1](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.0...v0.1.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* enhance isTransient function to retry on specific SearchStax 400 errors ([ea4651f](https://github.com/sadok-f/terraform-provider-searchstax/commit/ea4651f7bb12cb2bf70775527a3efdff6be42788))
+
 # 1.0.0 (2026-07-03)
 
 
