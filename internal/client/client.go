@@ -91,15 +91,21 @@ func (e *HTTPStatusError) Error() string {
 	return fmt.Sprintf("status: %d, body: %s", e.StatusCode, e.Body)
 }
 
-// isTransient reports whether err is worth retrying: an HTTP 5xx response
-// (e.g. a 502/500 returned while the cluster is briefly unavailable during a
-// restart) or a lower-level network error. HTTP 4xx responses are not retried.
+// isTransient reports whether err is worth retrying: an HTTP 5xx response,
+// a known transient SearchStax 400 response returned while a deployment is
+// still applying a previous change, or a lower-level network error.
 func isTransient(err error) bool {
 	if err == nil {
 		return false
 	}
 	var httpErr *HTTPStatusError
 	if errors.As(err, &httpErr) {
+		if httpErr.StatusCode == http.StatusBadRequest {
+			body := strings.ToLower(httpErr.Body)
+			if strings.Contains(body, "deployment currently updating another change") {
+				return true
+			}
+		}
 		return httpErr.StatusCode >= 500
 	}
 	// Non-HTTP errors are typically network-level and worth retrying.
