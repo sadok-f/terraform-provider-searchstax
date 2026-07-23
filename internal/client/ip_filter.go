@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -85,6 +86,16 @@ func (c *Client) ipFilterAction(action, accountName, deploymentID string, reqBod
 	// The real API confirms with {"detail": null, "success": true}; a non-2xx
 	// status is already an error, so reaching here means the action succeeded.
 	if _, err := c.doRequest(req); err != nil {
+		// The API can return HTTP 400 with a no-op message when the same CIDR
+		// configuration already exists. Treat that specific response as success
+		// so update/create operations remain idempotent.
+		var httpErr *HTTPStatusError
+		if errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusBadRequest {
+			body := strings.ToLower(httpErr.Body)
+			if strings.Contains(body, "already exist") && strings.Contains(body, "no change performed") {
+				return nil
+			}
+		}
 		return err
 	}
 	return nil
