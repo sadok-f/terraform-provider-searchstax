@@ -1,3 +1,10 @@
+## [0.1.2](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.1...v0.1.2) (2026-07-23)
+
+
+### Bug Fixes
+
+* handle HTTP 400 for existing CIDR configurations in ipFilterAction ([d62cea9](https://github.com/sadok-f/terraform-provider-searchstax/commit/d62cea9973525a90335029e52b6d7ee6774cf0f8))
+
 ## [0.1.1](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.0...v0.1.1) (2026-07-23)
 
 
