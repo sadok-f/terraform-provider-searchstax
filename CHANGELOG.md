@@ -1,3 +1,10 @@
+## [0.1.3](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.2...v0.1.3) (2026-07-24)
+
+
+### Bug Fixes
+
+* add plan modifier to ID attribute in IP filter resource schema ([fef2324](https://github.com/sadok-f/terraform-provider-searchstax/commit/fef2324fa59806bd3fd4cd735b38e2ac2f0aa4da))
+
 ## [0.1.2](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.1...v0.1.2) (2026-07-23)
 
 
