@@ -1,3 +1,10 @@
+## [0.1.4](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.3...v0.1.4) (2026-07-24)
+
+
+### Bug Fixes
+
+* handle empty description in IP filter resource read method ([926fa73](https://github.com/sadok-f/terraform-provider-searchstax/commit/926fa732ec99739895d0564fec9a74073a8f7455))
+
 ## [0.1.3](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.2...v0.1.3) (2026-07-24)
 
 
