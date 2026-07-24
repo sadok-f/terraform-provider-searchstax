@@ -88,7 +88,11 @@ func (r *ipFilterResource) Read(ctx context.Context, req resource.ReadRequest, r
 			services, diags := types.ListValueFrom(ctx, types.StringType, f.Services)
 			resp.Diagnostics.Append(diags...)
 			state.Services = services
-			state.Description = types.StringValue(f.Description)
+			if strings.TrimSpace(f.Description) == "" {
+				state.Description = types.StringNull()
+			} else {
+				state.Description = types.StringValue(f.Description)
+			}
 			state.ID = types.StringValue(state.AccountName.ValueString() + "/" + state.DeploymentUID.ValueString() + "/" + state.CIDRIP.ValueString())
 			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 			return
