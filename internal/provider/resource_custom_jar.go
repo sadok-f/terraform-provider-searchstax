@@ -75,7 +75,20 @@ func (r *customJarResource) Read(ctx context.Context, req resource.ReadRequest, 
 	state.ID = types.StringValue(state.AccountName.ValueString() + "/" + state.DeploymentUID.ValueString() + "/" + state.Name.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
-func (r *customJarResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+func (r *customJarResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan customJarResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if err := r.client.UploadCustomJar(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), searchstaxClient.CustomJar{Name: plan.Name.ValueString(), FilePath: plan.FilePath.ValueString(), SourceURL: plan.SourceURL.ValueString()}); err != nil {
+		resp.Diagnostics.AddError("Error updating custom jar", err.Error())
+		return
+	}
+
+	plan.ID = types.StringValue(plan.AccountName.ValueString() + "/" + plan.DeploymentUID.ValueString() + "/" + plan.Name.ValueString())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 func (r *customJarResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state customJarResourceModel

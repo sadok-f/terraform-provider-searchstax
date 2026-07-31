@@ -22,6 +22,18 @@ resource "searchstax_custom_jar" "test" {
 					resource.TestCheckResourceAttr("searchstax_custom_jar.test", "id", "test_account_name/ss123456/test.jar"),
 				),
 			},
+			{
+				Config: providerConfig + `
+resource "searchstax_custom_jar" "test" {
+  account_name   = "test_account_name"
+  deployment_uid = "ss123456"
+  name           = "test-updated.jar"
+}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("searchstax_custom_jar.test", "name", "test-updated.jar"),
+					resource.TestCheckResourceAttr("searchstax_custom_jar.test", "id", "test_account_name/ss123456/test-updated.jar"),
+				),
+			},
 		},
 	})
 }
