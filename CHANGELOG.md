@@ -1,3 +1,10 @@
+## [0.1.5](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.4...v0.1.5) (2026-07-31)
+
+
+### Bug Fixes
+
+* implement update method for custom jar resource and add corresponding test case ([582e3f6](https://github.com/sadok-f/terraform-provider-searchstax/commit/582e3f6f7da012aa57facfc1fdf85703c27aad43))
+
 ## [0.1.4](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.3...v0.1.4) (2026-07-24)
 
 
