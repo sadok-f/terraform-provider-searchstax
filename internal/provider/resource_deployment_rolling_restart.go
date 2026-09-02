@@ -122,6 +122,7 @@ func (r *deploymentRollingRestartResource) Update(ctx context.Context, req resou
 	}
 
 	if state.Message.IsNull() {
+		plan.ID = types.StringValue(plan.AccountName.ValueString() + "/" + plan.DeploymentUID.ValueString())
 		plan.Message = types.StringValue("imported")
 		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 		return
@@ -148,6 +149,7 @@ func (r *deploymentRollingRestartResource) Update(ctx context.Context, req resou
 		msg = out.Detail
 	}
 	plan.Message = types.StringValue(msg)
+	plan.ID = types.StringValue(plan.AccountName.ValueString() + "/" + plan.DeploymentUID.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

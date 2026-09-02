@@ -100,7 +100,7 @@ func isTransient(err error) bool {
 	}
 	var httpErr *HTTPStatusError
 	if errors.As(err, &httpErr) {
-		if httpErr.StatusCode == http.StatusBadRequest {
+		if httpErr.StatusCode == http.StatusBadRequest || httpErr.StatusCode == http.StatusConflict {
 			body := strings.ToLower(httpErr.Body)
 			if strings.Contains(body, "deployment currently updating another change") {
 				return true

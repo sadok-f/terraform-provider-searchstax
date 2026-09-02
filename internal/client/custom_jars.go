@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type CustomJarsList struct {
@@ -28,6 +29,32 @@ type CustomJar struct {
 	// (and FilePath is empty), UploadCustomJar downloads the file from the URL
 	// and uploads it via multipart/form-data, just like a local file.
 	SourceURL string `json:"-"`
+}
+
+func (c *Client) uploadCustomJarRequest(request func() (*http.Request, error)) error {
+	const (
+		attempts = 10
+		backoff  = 15 * time.Second
+	)
+
+	var lastErr error
+	for attempt := 0; attempt < attempts; attempt++ {
+		req, err := request()
+		if err != nil {
+			return err
+		}
+		if _, err = c.doRequest(req); err == nil {
+			return nil
+		} else if !isTransient(err) || c.isMockHost() {
+			return err
+		} else {
+			lastErr = err
+		}
+		if attempt < attempts-1 {
+			time.Sleep(backoff)
+		}
+	}
+	return fmt.Errorf("custom jar upload did not complete after %d attempts: %w", attempts, lastErr)
 }
 
 // UnmarshalJSON supports both response shapes for the custom-jars endpoint:
@@ -144,15 +171,16 @@ func (c *Client) uploadCustomJarURL(url, sourceURL, name string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", url, &buf)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	if _, err := c.doRequest(req); err != nil {
-		return err
-	}
-	return nil
+	contentType := writer.FormDataContentType()
+	body := buf.Bytes()
+	return c.uploadCustomJarRequest(func() (*http.Request, error) {
+		req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", contentType)
+		return req, nil
+	})
 }
 
 // uploadCustomJarFile performs the multipart/form-data file upload.
@@ -176,16 +204,16 @@ func (c *Client) uploadCustomJarFile(url, filePath string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", url, &buf)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	if _, err := c.doRequest(req); err != nil {
-		return err
-	}
-	return nil
+	contentType := writer.FormDataContentType()
+	body := buf.Bytes()
+	return c.uploadCustomJarRequest(func() (*http.Request, error) {
+		req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", contentType)
+		return req, nil
+	})
 }
 
 // uploadCustomJarJSON sends a JSON metadata payload (mock API path).
@@ -194,16 +222,13 @@ func (c *Client) uploadCustomJarJSON(url string, jar CustomJar) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rb)))
-	if err != nil {
-		return err
-	}
-	// The real API returns the updated jar list; a non-2xx status is already an
-	// error, so reaching here means the jar was uploaded.
-	if _, err := c.doRequest(req); err != nil {
-		return err
-	}
-	return nil
+	return c.uploadCustomJarRequest(func() (*http.Request, error) {
+		req, err := http.NewRequest("POST", url, strings.NewReader(string(rb)))
+		if err != nil {
+			return nil, err
+		}
+		return req, nil
+	})
 }
 
 func (c *Client) DeleteCustomJar(accountName, deploymentID, jarName string) error {
