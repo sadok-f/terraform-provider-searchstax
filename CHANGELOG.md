@@ -1,3 +1,10 @@
+## [0.1.8](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.7...v0.1.8) (2026-09-02)
+
+
+### Bug Fixes
+
+* update description for triggers in deployment_rolling_restart documentation ([1eb0a34](https://github.com/sadok-f/terraform-provider-searchstax/commit/1eb0a34e9e9f76e0e92f0cd86e7e55cbe98a8705))
+
 ## [0.1.7](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.6...v0.1.7) (2026-09-02)
 
 
