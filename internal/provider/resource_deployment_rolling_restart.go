@@ -10,9 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -33,25 +30,12 @@ func (r *deploymentRollingRestartResource) Schema(_ context.Context, _ resource.
 		"id":             schema.StringAttribute{Computed: true},
 		"account_name":   schema.StringAttribute{Required: true},
 		"deployment_uid": schema.StringAttribute{Required: true},
-		"solr": schema.BoolAttribute{
-			Optional: true,
-			PlanModifiers: []planmodifier.Bool{
-				boolplanmodifier.RequiresReplace(),
-			},
-		},
-		"zookeeper": schema.BoolAttribute{
-			Optional: true,
-			PlanModifiers: []planmodifier.Bool{
-				boolplanmodifier.RequiresReplace(),
-			},
-		},
+		"solr":           schema.BoolAttribute{Optional: true},
+		"zookeeper":      schema.BoolAttribute{Optional: true},
 		"triggers": schema.MapAttribute{
 			ElementType: types.StringType,
 			Optional:    true,
-			Description: "Arbitrary map of values that, when changed, forces a new rolling restart. Use it to trigger a single restart when the custom jar list changes.",
-			PlanModifiers: []planmodifier.Map{
-				mapplanmodifier.RequiresReplace(),
-			},
+			Description: "Arbitrary map of values that, when changed, initiates a rolling restart. Use it to trigger a single restart when the custom jar list changes.",
 		},
 		"message": schema.StringAttribute{Computed: true},
 	}}
@@ -121,9 +105,50 @@ func (r *deploymentRollingRestartResource) ImportState(ctx context.Context, req 
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("account_name"), parts[0])...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("deployment_uid"), parts[1])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 }
 
-func (r *deploymentRollingRestartResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+func (r *deploymentRollingRestartResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan deploymentRollingRestartResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var state deploymentRollingRestartResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if state.Message.IsNull() {
+		plan.Message = types.StringValue("imported")
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	solr := true
+	zookeeper := false
+	if !plan.Solr.IsNull() {
+		solr = plan.Solr.ValueBool()
+	}
+	if !plan.Zookeeper.IsNull() {
+		zookeeper = plan.Zookeeper.ValueBool()
+	}
+	out, err := r.client.RollingRestart(plan.AccountName.ValueString(), plan.DeploymentUID.ValueString(), searchstaxClient.RollingRestartRequest{
+		Solr:      solr,
+		Zookeeper: zookeeper,
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("Error initiating rolling restart", err.Error())
+		return
+	}
+	msg := out.Message
+	if msg == "" {
+		msg = out.Detail
+	}
+	plan.Message = types.StringValue(msg)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *deploymentRollingRestartResource) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {
