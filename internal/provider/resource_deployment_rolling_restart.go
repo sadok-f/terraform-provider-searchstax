@@ -3,9 +3,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	searchstaxClient "terraform-provider-searchstax/internal/client"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -13,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+var _ resource.ResourceWithImportState = &deploymentRollingRestartResource{}
 
 func NewDeploymentRollingRestartResource() resource.Resource {
 	return &deploymentRollingRestartResource{}
@@ -103,6 +107,20 @@ func (r *deploymentRollingRestartResource) Read(ctx context.Context, req resourc
 		return
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (r *deploymentRollingRestartResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	parts := strings.Split(req.ID, "/")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: account_name/deployment_uid. Got: %q", req.ID),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("account_name"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("deployment_uid"), parts[1])...)
 }
 
 func (r *deploymentRollingRestartResource) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
