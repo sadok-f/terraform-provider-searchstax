@@ -1,3 +1,10 @@
+## [0.1.7](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.6...v0.1.7) (2026-09-02)
+
+
+### Bug Fixes
+
+* Add documentation templates for various SearchStax data sources and resources ([63ca9df](https://github.com/sadok-f/terraform-provider-searchstax/commit/63ca9df6a9699f68016f1e6a852378617f25273c))
+
 ## [0.1.6](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.5...v0.1.6) (2026-09-02)
 
 
