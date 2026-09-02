@@ -1,3 +1,10 @@
+## [0.1.6](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.5...v0.1.6) (2026-09-02)
+
+
+### Bug Fixes
+
+* add import instructions for various resources in documentation ([820ff84](https://github.com/sadok-f/terraform-provider-searchstax/commit/820ff846c34718577963b111ec203477d94d8a51))
+
 ## [0.1.5](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.4...v0.1.5) (2026-07-31)
 
 
