@@ -1,3 +1,10 @@
+## [0.1.9](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.8...v0.1.9) (2026-09-02)
+
+
+### Bug Fixes
+
+* enhance error handling for custom jar uploads and update deployment ID format ([e8e439c](https://github.com/sadok-f/terraform-provider-searchstax/commit/e8e439ce0ae28b982f86d483dadfd33ed057cf7c))
+
 ## [0.1.8](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.7...v0.1.8) (2026-09-02)
 
 
