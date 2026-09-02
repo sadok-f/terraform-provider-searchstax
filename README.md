@@ -12,6 +12,8 @@
 A Terraform provider for [SearchStax Cloud](https://www.searchstax.com/docs/searchstax-cloud-docs-home/) that lets you
 manage deployments, users, backups, custom JARs, DNS records and more as code.
 
+View the provider on the [Terraform Registry](https://registry.terraform.io/providers/sadok-f/searchstax/latest).
+
 ## Requirements
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
@@ -41,7 +43,7 @@ Terraform searches for the `.terraformrc` file in your home directory and applie
 provider_installation {
 
   dev_overrides {
-      "registry.terraform.io/sadok-f/searchstax" = "<PATH>"
+      "sadok-f/searchstax" = "<PATH>"
   }
 
   # For all other providers, install them directly from their origin provider
@@ -57,7 +59,6 @@ Your `<PATH>` may vary depending on how your Go environment variables are config
 
 ## Using the provider
 
-The provider is published on the [Terraform Registry](https://registry.terraform.io/providers/sadok-f/searchstax/latest).
 Add it to your configuration and run `terraform init`:
 
 ```hcl
