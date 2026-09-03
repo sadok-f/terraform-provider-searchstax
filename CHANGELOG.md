@@ -1,3 +1,10 @@
+## [0.1.10](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.9...v0.1.10) (2026-09-03)
+
+
+### Bug Fixes
+
+* improve retry logic for custom jar and deployment user deletions ([9c068de](https://github.com/sadok-f/terraform-provider-searchstax/commit/9c068de6e319fd2a5d5ed07322a26a29e318f287))
+
 ## [0.1.9](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.8...v0.1.9) (2026-09-02)
 
 
