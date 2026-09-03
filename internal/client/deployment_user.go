@@ -147,22 +147,32 @@ func (c *Client) DeleteDeploymentUser(accountName string, deploymentID string, u
 			context: "NewRequestOnDelete",
 		}
 	}
-	req, err := http.NewRequest("POST",
-		fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/delete-user/",
-			c.HostURL, accountName, deploymentID), strings.NewReader(string(userToDelete)))
-	if err != nil {
-		return &Error{
-			err:     err,
-			context: "NewRequestOnDelete",
+	const (
+		attempts = 10
+		backoff  = 15 * time.Second
+	)
+	deleteURL := fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/delete-user/", c.HostURL, accountName, deploymentID)
+	var body []byte
+	var lastErr error
+	for attempt := 0; attempt < attempts; attempt++ {
+		req, reqErr := http.NewRequest("POST", deleteURL, strings.NewReader(string(userToDelete)))
+		if reqErr != nil {
+			return &Error{err: reqErr, context: "NewRequestOnDelete"}
+		}
+		body, err = c.doRequest(req)
+		if err == nil {
+			break
+		}
+		if !isTransient(err) || c.isMockHost() {
+			return &Error{err: err, context: "doRequestOnDelete"}
+		}
+		lastErr = err
+		if attempt < attempts-1 {
+			time.Sleep(backoff)
 		}
 	}
-
-	body, err := c.doRequest(req)
 	if err != nil {
-		return &Error{
-			"doRequestOnDelete",
-			err,
-		}
+		return &Error{err: fmt.Errorf("deployment user deletion did not complete after %d attempts: %w", attempts, lastErr), context: "doRequestOnDelete"}
 	}
 	apiResponse := ApiResponse{}
 	err = json.Unmarshal(body, &apiResponse)

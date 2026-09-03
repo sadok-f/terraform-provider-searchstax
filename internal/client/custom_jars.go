@@ -249,18 +249,32 @@ func (c *Client) DeleteCustomJar(accountName, deploymentID, jarName string) erro
 		}
 	}
 
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/account/%s/deployment/%s/solr/custom-jars/%s/", c.HostURL, accountName, deploymentID, jarName), nil)
-	if err != nil {
-		return err
-	}
-	if _, err := c.doRequest(req); err != nil {
-		// A 404 means the jar is already gone; deletion is idempotent.
-		if isNotFound(err) {
-			return nil
+	const (
+		attempts = 10
+		backoff  = 15 * time.Second
+	)
+	url := fmt.Sprintf("%s/account/%s/deployment/%s/solr/custom-jars/%s/", c.HostURL, accountName, deploymentID, jarName)
+	var lastErr error
+	for attempt := 0; attempt < attempts; attempt++ {
+		req, err := http.NewRequest("DELETE", url, nil)
+		if err != nil {
+			return err
 		}
-		return err
+		if _, err = c.doRequest(req); err == nil {
+			// The real API returns a 2xx response whose body does not include a
+			// "deleted" flag, so any successful response means the jar was removed.
+			return nil
+		} else if isNotFound(err) {
+			// A 404 means the jar is already gone; deletion is idempotent.
+			return nil
+		} else if !isTransient(err) || c.isMockHost() {
+			return err
+		} else {
+			lastErr = err
+		}
+		if attempt < attempts-1 {
+			time.Sleep(backoff)
+		}
 	}
-	// The real API returns a 2xx response whose body does not include a
-	// "deleted" flag, so any successful response means the jar was removed.
-	return nil
+	return fmt.Errorf("custom jar deletion did not complete after %d attempts: %w", attempts, lastErr)
 }

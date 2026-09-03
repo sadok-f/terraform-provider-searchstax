@@ -92,17 +92,18 @@ func (e *HTTPStatusError) Error() string {
 }
 
 // isTransient reports whether err is worth retrying: an HTTP 5xx response,
-// a known transient SearchStax 400 response returned while a deployment is
-// still applying a previous change, or a lower-level network error.
+// known transient SearchStax responses returned while a deployment is still
+// applying a previous change, or a lower-level network error.
 func isTransient(err error) bool {
 	if err == nil {
 		return false
 	}
 	var httpErr *HTTPStatusError
 	if errors.As(err, &httpErr) {
-		if httpErr.StatusCode == http.StatusBadRequest || httpErr.StatusCode == http.StatusConflict {
+		if httpErr.StatusCode == http.StatusBadRequest || httpErr.StatusCode == http.StatusConflict || httpErr.StatusCode == http.StatusNotFound {
 			body := strings.ToLower(httpErr.Body)
-			if strings.Contains(body, "deployment currently updating another change") {
+			if strings.Contains(body, "deployment currently updating another change") ||
+				strings.Contains(body, "deployment does not exist or is not running") {
 				return true
 			}
 		}
