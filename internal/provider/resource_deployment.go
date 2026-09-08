@@ -382,6 +382,24 @@ func (d *deploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
+	if deployment.PrivateVpc == 0 && deployment.VpcName != "" {
+		privateVpcs, err := d.client.GetPrivateVpc(state.AccountName.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error Reading SearchStax private VPCs",
+				fmt.Sprintf("Could not resolve private VPC %q for deployment UID %s, Account: %s, Error: %s", deployment.VpcName, state.UID.ValueString(), state.AccountName.ValueString(), err.Error()),
+			)
+			return
+		}
+
+		for _, privateVpc := range privateVpcs.Results {
+			if privateVpc.Name == deployment.VpcName {
+				deployment.PrivateVpc = privateVpc.ID
+				break
+			}
+		}
+	}
+
 	// Overwrite items with refreshed state
 	state.ID = types.StringValue("placeholder")
 	resp.Diagnostics.Append(populateDeploymentResourceModel(ctx, &state, *deployment)...)
