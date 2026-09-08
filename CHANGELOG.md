@@ -1,3 +1,10 @@
+## [0.1.11](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.10...v0.1.11) (2026-09-08)
+
+
+### Bug Fixes
+
+* add private VPC resolution in Read method and update import state verification ([90ba5d0](https://github.com/sadok-f/terraform-provider-searchstax/commit/90ba5d0b60688bd193aa6d62300a2727bd4f1204))
+
 ## [0.1.10](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.9...v0.1.10) (2026-09-03)
 
 
