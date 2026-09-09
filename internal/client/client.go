@@ -27,7 +27,11 @@ type Client struct {
 func (c *Client) LockDeploymentMutation(accountName, deploymentID string) func() {
 	key := accountName + "/" + deploymentID
 	lockValue, _ := c.mutationLocks.LoadOrStore(key, &sync.Mutex{})
-	lock := lockValue.(*sync.Mutex)
+	lock, ok := lockValue.(*sync.Mutex)
+	if !ok {
+		lock = &sync.Mutex{}
+		c.mutationLocks.Store(key, lock)
+	}
 	lock.Lock()
 	return lock.Unlock
 }
