@@ -1,3 +1,10 @@
+## [0.1.13](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.12...v0.1.13) (2026-09-09)
+
+
+### Bug Fixes
+
+* ensure proper locking mechanism in LockDeploymentMutation function ([8995525](https://github.com/sadok-f/terraform-provider-searchstax/commit/89955252b4cd3c567fa3c4e742bdfd51e8621cde))
+
 ## [0.1.12](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.11...v0.1.12) (2026-09-09)
 
 
