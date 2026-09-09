@@ -1,3 +1,10 @@
+## [0.1.12](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.11...v0.1.12) (2026-09-09)
+
+
+### Bug Fixes
+
+* enhance deployment mutation handling and increase retry attempts for API calls ([284291f](https://github.com/sadok-f/terraform-provider-searchstax/commit/284291f97ebe5e4f54ca5c2902ca662a4ecc5bda))
+
 ## [0.1.11](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.10...v0.1.11) (2026-09-08)
 
 
