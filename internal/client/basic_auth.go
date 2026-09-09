@@ -10,8 +10,11 @@ import (
 )
 
 func (c *Client) EnableBasicAuth(accountName, deploymentID string) (bool, error) {
+	unlock := c.LockDeploymentMutation(accountName, deploymentID)
+	defer unlock()
+
 	const (
-		attempts = 10
+		attempts = 40
 		backoff  = 15 * time.Second
 	)
 
@@ -41,6 +44,9 @@ func (c *Client) EnableBasicAuth(accountName, deploymentID string) (bool, error)
 }
 
 func (c *Client) DisableBasicAuth(accountName, deploymentID string) (bool, error) {
+	unlock := c.LockDeploymentMutation(accountName, deploymentID)
+	defer unlock()
+
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/disable/", c.HostURL, accountName, deploymentID), nil)
 	if err != nil {
 		return false, err
@@ -67,20 +73,14 @@ type SetBasicAuthPasswordRequest struct {
 }
 
 func (c *Client) SetBasicAuthPassword(accountName, deploymentID string, reqBody SetBasicAuthPasswordRequest) error {
+	unlock := c.LockDeploymentMutation(accountName, deploymentID)
+	defer unlock()
+
 	rb, err := json.Marshal(reqBody)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/set-password/", c.HostURL, accountName, deploymentID), strings.NewReader(string(rb)))
-	if err != nil {
-		return err
-	}
-	// The real API returns {"message": ..., "success": "true"}; a non-2xx status
-	// is already an error, so reaching here means the password was updated.
-	if _, err := c.doRequest(req); err != nil {
-		return err
-	}
-	return nil
+	return c.updateBasicAuth(accountName, deploymentID, "set-password", rb)
 }
 
 type SetBasicAuthRoleRequest struct {
@@ -95,18 +95,39 @@ func (c *Client) IsBasicAuthEnabled(accountName, deploymentID string) (bool, err
 }
 
 func (c *Client) SetBasicAuthRole(accountName, deploymentID string, reqBody SetBasicAuthRoleRequest) error {
+	unlock := c.LockDeploymentMutation(accountName, deploymentID)
+	defer unlock()
+
 	rb, err := json.Marshal(reqBody)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/set-role/", c.HostURL, accountName, deploymentID), strings.NewReader(string(rb)))
-	if err != nil {
-		return err
+	return c.updateBasicAuth(accountName, deploymentID, "set-role", rb)
+}
+
+func (c *Client) updateBasicAuth(accountName, deploymentID, action string, body []byte) error {
+	const (
+		attempts = 40
+		backoff  = 15 * time.Second
+	)
+
+	url := fmt.Sprintf("%s/account/%s/deployment/%s/solr/auth/%s/", c.HostURL, accountName, deploymentID, action)
+	var lastErr error
+	for attempt := 0; attempt < attempts; attempt++ {
+		req, err := http.NewRequest("POST", url, strings.NewReader(string(body)))
+		if err != nil {
+			return err
+		}
+		if _, err = c.doRequest(req); err == nil {
+			return nil
+		} else if !isTransient(err) || c.isMockHost() {
+			return err
+		} else {
+			lastErr = err
+		}
+		if attempt < attempts-1 {
+			time.Sleep(backoff)
+		}
 	}
-	// The real API returns {"message": ..., "success": "true"}; a non-2xx status
-	// is already an error, so reaching here means the role was updated.
-	if _, err := c.doRequest(req); err != nil {
-		return err
-	}
-	return nil
+	return fmt.Errorf("basic auth %s did not complete after %d attempts: %w", action, attempts, lastErr)
 }

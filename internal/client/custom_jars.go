@@ -33,7 +33,7 @@ type CustomJar struct {
 
 func (c *Client) uploadCustomJarRequest(request func() (*http.Request, error)) error {
 	const (
-		attempts = 10
+		attempts = 40
 		backoff  = 15 * time.Second
 	)
 
@@ -117,6 +117,9 @@ func (c *Client) GetCustomJars(accountName, deploymentID string) (*CustomJarsLis
 //   - neither set: send a JSON metadata payload (used by the mock API in
 //     acceptance tests).
 func (c *Client) UploadCustomJar(accountName, deploymentID string, jar CustomJar) error {
+	unlock := c.LockDeploymentMutation(accountName, deploymentID)
+	defer unlock()
+
 	url := fmt.Sprintf("%s/account/%s/deployment/%s/solr/custom-jars/", c.HostURL, accountName, deploymentID)
 
 	switch {
@@ -232,6 +235,9 @@ func (c *Client) uploadCustomJarJSON(url string, jar CustomJar) error {
 }
 
 func (c *Client) DeleteCustomJar(accountName, deploymentID, jarName string) error {
+	unlock := c.LockDeploymentMutation(accountName, deploymentID)
+	defer unlock()
+
 	// The real API returns a 500 (not a 404) when asked to delete a jar that
 	// is no longer installed, so first check whether the jar is still present.
 	// If it is already gone, deletion is a no-op (matches the Python module,
@@ -250,7 +256,7 @@ func (c *Client) DeleteCustomJar(accountName, deploymentID, jarName string) erro
 	}
 
 	const (
-		attempts = 10
+		attempts = 40
 		backoff  = 15 * time.Second
 	)
 	url := fmt.Sprintf("%s/account/%s/deployment/%s/solr/custom-jars/%s/", c.HostURL, accountName, deploymentID, jarName)

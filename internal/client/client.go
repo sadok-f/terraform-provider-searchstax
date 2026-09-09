@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -14,10 +15,21 @@ const HostURL string = "https://app.searchstax.com/api/rest/v2"
 
 // Client - Client struct.
 type Client struct {
-	HostURL    string
-	HTTPClient *http.Client
-	Token      string
-	Auth       AuthStruct
+	HostURL       string
+	HTTPClient    *http.Client
+	Token         string
+	Auth          AuthStruct
+	mutationLocks sync.Map
+}
+
+// LockDeploymentMutation serializes mutating API calls for a deployment.
+// SearchStax accepts only one deployment change at a time.
+func (c *Client) LockDeploymentMutation(accountName, deploymentID string) func() {
+	key := accountName + "/" + deploymentID
+	lockValue, _ := c.mutationLocks.LoadOrStore(key, &sync.Mutex{})
+	lock := lockValue.(*sync.Mutex)
+	lock.Lock()
+	return lock.Unlock
 }
 
 // AuthStruct - AuthStruct struct.
