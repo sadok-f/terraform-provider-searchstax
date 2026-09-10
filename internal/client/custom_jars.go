@@ -94,19 +94,35 @@ func (l *CustomJarsList) UnmarshalJSON(data []byte) error {
 }
 
 func (c *Client) GetCustomJars(accountName, deploymentID string) (*CustomJarsList, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/account/%s/deployment/%s/solr/custom-jars/", c.HostURL, accountName, deploymentID), nil)
-	if err != nil {
-		return nil, err
+	const (
+		attempts = 10
+		backoff  = 15 * time.Second
+	)
+
+	url := fmt.Sprintf("%s/account/%s/deployment/%s/solr/custom-jars/", c.HostURL, accountName, deploymentID)
+	var lastErr error
+	for attempt := 0; attempt < attempts; attempt++ {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		body, err := c.doRequest(req)
+		if err == nil {
+			out := CustomJarsList{}
+			if err := json.Unmarshal(body, &out); err != nil {
+				return nil, err
+			}
+			return &out, nil
+		}
+		if !isTransient(err) || c.isMockHost() {
+			return nil, err
+		}
+		lastErr = err
+		if attempt < attempts-1 {
+			time.Sleep(backoff)
+		}
 	}
-	body, err := c.doRequest(req)
-	if err != nil {
-		return nil, err
-	}
-	out := CustomJarsList{}
-	if err := json.Unmarshal(body, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
+	return nil, fmt.Errorf("reading custom jars did not complete after %d attempts: %w", attempts, lastErr)
 }
 
 // UploadCustomJar uploads a custom jar to a deployment.
