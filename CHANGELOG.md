@@ -1,3 +1,10 @@
+## [0.1.14](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.13...v0.1.14) (2026-09-10)
+
+
+### Bug Fixes
+
+* implement retry mechanism for GetCustomJars to handle transient errors ([011a76e](https://github.com/sadok-f/terraform-provider-searchstax/commit/011a76e33298fa16cbf9d73ccca4c55a4eb9ccb0))
+
 ## [0.1.13](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.12...v0.1.13) (2026-09-09)
 
 
