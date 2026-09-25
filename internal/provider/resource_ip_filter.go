@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 
 	searchstaxClient "terraform-provider-searchstax/internal/client"
@@ -12,8 +13,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+// cidrValidator validates that a string attribute is a valid CIDR notation (e.g. "192.168.1.0/24").
+type cidrValidator struct{}
+
+func (v cidrValidator) Description(_ context.Context) string {
+	return `value must be a valid CIDR notation, e.g. "192.168.1.0/24" or "2001:db8::/32"`
+}
+func (v cidrValidator) MarkdownDescription(ctx context.Context) string { return v.Description(ctx) }
+func (v cidrValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if _, _, err := net.ParseCIDR(req.ConfigValue.ValueString()); err != nil {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid CIDR IP",
+			fmt.Sprintf("Value %q is not a valid CIDR notation. Expected an IP address followed by a prefix length, e.g. \"192.168.1.0/24\" or \"2001:db8::/32\".", req.ConfigValue.ValueString()),
+		)
+	}
+}
 
 func NewIPFilterResource() resource.Resource { return &ipFilterResource{} }
 
@@ -32,9 +54,12 @@ func (r *ipFilterResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		},
 		"account_name":   schema.StringAttribute{Required: true},
 		"deployment_uid": schema.StringAttribute{Required: true},
-		"cidr_ip":        schema.StringAttribute{Required: true},
-		"description":    schema.StringAttribute{Optional: true},
-		"services":       schema.ListAttribute{Required: true, ElementType: types.StringType},
+		"cidr_ip": schema.StringAttribute{
+			Required:   true,
+			Validators: []validator.String{cidrValidator{}},
+		},
+		"description": schema.StringAttribute{Optional: true},
+		"services":    schema.ListAttribute{Required: true, ElementType: types.StringType},
 	}}
 }
 func (r *ipFilterResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -134,9 +159,17 @@ func (r *ipFilterResource) Delete(ctx context.Context, req resource.DeleteReques
 	}
 }
 func (r *ipFilterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	parts := strings.Split(req.ID, "/")
+	// cidr_ip itself contains a "/", so only split the first two separators.
+	parts := strings.SplitN(req.ID, "/", 3)
 	if len(parts) != 3 {
 		resp.Diagnostics.AddError("Unexpected Import Identifier", "Expected account_name/deployment_uid/cidr_ip")
+		return
+	}
+	if _, _, err := net.ParseCIDR(parts[2]); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid CIDR IP",
+			fmt.Sprintf("Value %q is not a valid CIDR notation. Expected an IP address followed by a prefix length, e.g. \"192.168.1.0/24\" or \"2001:db8::/32\".", parts[2]),
+		)
 		return
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("account_name"), parts[0])...)
