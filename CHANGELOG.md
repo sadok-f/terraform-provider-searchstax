@@ -1,3 +1,10 @@
+## [0.1.15](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.14...v0.1.15) (2026-09-25)
+
+
+### Bug Fixes
+
+* add CIDR validation for cidr_ip attribute in IP filter resource ([1149df5](https://github.com/sadok-f/terraform-provider-searchstax/commit/1149df5cd6a3f204b80efbb6fda017a1e09fccf3))
+
 ## [0.1.14](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.13...v0.1.14) (2026-09-10)
 
 
