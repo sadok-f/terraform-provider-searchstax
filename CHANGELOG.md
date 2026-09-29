@@ -1,3 +1,10 @@
+## [0.1.16](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.15...v0.1.16) (2026-09-29)
+
+
+### Bug Fixes
+
+* improve pagination logic in GetAllPlans to handle total count correctly ([0f676a0](https://github.com/sadok-f/terraform-provider-searchstax/commit/0f676a0bb56bdb3e6be59a79d2af1ca85fc54531))
+
 ## [0.1.15](https://github.com/sadok-f/terraform-provider-searchstax/compare/v0.1.14...v0.1.15) (2026-09-25)
 
 
