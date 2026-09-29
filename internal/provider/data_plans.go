@@ -21,12 +21,14 @@ func (d *plansDataSource) Metadata(_ context.Context, req datasource.MetadataReq
 
 func (d *plansDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{Attributes: map[string]schema.Attribute{
-		"id":           schema.StringAttribute{Computed: true},
-		"account_name": schema.StringAttribute{Required: true},
-		"application":  schema.StringAttribute{Optional: true},
-		"plan_type":    schema.StringAttribute{Optional: true},
-		"page":         schema.Int64Attribute{Optional: true},
-		"total_count":  schema.Int64Attribute{Computed: true},
+		"id":                schema.StringAttribute{Computed: true},
+		"account_name":      schema.StringAttribute{Required: true},
+		"application":       schema.StringAttribute{Optional: true},
+		"plan_type":         schema.StringAttribute{Optional: true},
+		"cloud_provider_id": schema.StringAttribute{Optional: true, MarkdownDescription: "Filter by cloud provider. One of `aws`, `azure`, `gcp`."},
+		"tier":              schema.StringAttribute{Optional: true, MarkdownDescription: "Filter by tier. One of `silver`, `gold`, `platinum`, `platinum_plus`."},
+		"page":              schema.Int64Attribute{Optional: true},
+		"total_count":       schema.Int64Attribute{Computed: true},
 		"plans": schema.ListNestedAttribute{Computed: true, NestedObject: schema.NestedAttributeObject{Attributes: map[string]schema.Attribute{
 			"name":                 schema.StringAttribute{Computed: true},
 			"description":          schema.StringAttribute{Computed: true},
@@ -70,9 +72,9 @@ func (d *plansDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		err error
 	)
 	if page > 0 {
-		out, err = d.client.GetPlans(state.AccountName.ValueString(), state.Application.ValueString(), state.PlanType.ValueString(), page)
+		out, err = d.client.GetPlans(state.AccountName.ValueString(), state.Application.ValueString(), state.PlanType.ValueString(), state.CloudProviderID.ValueString(), state.Tier.ValueString(), page)
 	} else {
-		out, err = d.client.GetAllPlans(state.AccountName.ValueString(), state.Application.ValueString(), state.PlanType.ValueString())
+		out, err = d.client.GetAllPlans(state.AccountName.ValueString(), state.Application.ValueString(), state.PlanType.ValueString(), state.CloudProviderID.ValueString(), state.Tier.ValueString())
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read plans", err.Error())
@@ -109,13 +111,15 @@ func (d *plansDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 }
 
 type plansDataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	AccountName types.String `tfsdk:"account_name"`
-	Application types.String `tfsdk:"application"`
-	PlanType    types.String `tfsdk:"plan_type"`
-	Page        types.Int64  `tfsdk:"page"`
-	TotalCount  types.Int64  `tfsdk:"total_count"`
-	Plans       []planModel  `tfsdk:"plans"`
+	ID              types.String `tfsdk:"id"`
+	AccountName     types.String `tfsdk:"account_name"`
+	Application     types.String `tfsdk:"application"`
+	PlanType        types.String `tfsdk:"plan_type"`
+	CloudProviderID types.String `tfsdk:"cloud_provider_id"`
+	Tier            types.String `tfsdk:"tier"`
+	Page            types.Int64  `tfsdk:"page"`
+	TotalCount      types.Int64  `tfsdk:"total_count"`
+	Plans           []planModel  `tfsdk:"plans"`
 }
 
 type planModel struct {

@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -311,7 +312,7 @@ func (p *Plan) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Client) GetPlans(accountName, application, planType string, page int) (*PlansList, error) {
+func (c *Client) GetPlans(accountName, application, planType, cloudProviderID, tier string, page int) (*PlansList, error) {
 	q := url.Values{}
 	if page > 0 {
 		q.Set("page", fmt.Sprintf("%d", page))
@@ -321,6 +322,12 @@ func (c *Client) GetPlans(accountName, application, planType string, page int) (
 	}
 	if planType != "" {
 		q.Set("plan_type", planType)
+	}
+	if cloudProviderID != "" {
+		q.Set("cloud_provider_id", cloudProviderID)
+	}
+	if tier != "" {
+		q.Set("tier", tier)
 	}
 	reqURL := fmt.Sprintf("%s/account/%s/plan/", c.HostURL, accountName)
 	if encoded := q.Encode(); encoded != "" {
@@ -347,15 +354,25 @@ func (c *Client) GetPlans(accountName, application, planType string, page int) (
 }
 
 // GetAllPlans fetches every page of plans and returns them in a single PlansList.
-func (c *Client) GetAllPlans(accountName, application, planType string) (*PlansList, error) {
+func (c *Client) GetAllPlans(accountName, application, planType, cloudProviderID, tier string) (*PlansList, error) {
 	var allResults []Plan
 	seen := make(map[string]bool)
+	fetched := 0
+	total := 0
 	page := 1
 	for page <= 100 { // safety limit
-		out, err := c.GetPlans(accountName, application, planType, page)
+		out, err := c.GetPlans(accountName, application, planType, cloudProviderID, tier, page)
 		if err != nil {
+			// Some backends report a "count" that doesn't match the number of
+			// unique plans, which can push us to request a page past the end.
+			var httpErr *HTTPStatusError
+			if page > 1 && errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusNotFound {
+				break
+			}
 			return nil, err
 		}
+		total = int(out.Count)
+		fetched += len(out.Results)
 		for _, p := range out.Results {
 			key := p.Plan
 			if key == "" {
@@ -366,7 +383,7 @@ func (c *Client) GetAllPlans(accountName, application, planType string) (*PlansL
 				allResults = append(allResults, p)
 			}
 		}
-		if len(out.Results) == 0 || out.Next == "" {
+		if len(out.Results) == 0 || out.Next == "" || (total > 0 && fetched >= total) {
 			break
 		}
 		page++
