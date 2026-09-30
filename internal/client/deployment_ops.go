@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -333,6 +332,12 @@ func (c *Client) GetPlans(accountName, application, planType, cloudProviderID, t
 	if encoded := q.Encode(); encoded != "" {
 		reqURL += "?" + encoded
 	}
+	return c.fetchPlansPage(reqURL)
+}
+
+// fetchPlansPage issues a GET against a fully-formed plans URL, used both for
+// the initial filtered request and for following the API's "next" link as-is.
+func (c *Client) fetchPlansPage(reqURL string) (*PlansList, error) {
 	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return nil, err
@@ -357,22 +362,11 @@ func (c *Client) GetPlans(accountName, application, planType, cloudProviderID, t
 func (c *Client) GetAllPlans(accountName, application, planType, cloudProviderID, tier string) (*PlansList, error) {
 	var allResults []Plan
 	seen := make(map[string]bool)
-	fetched := 0
-	total := 0
-	page := 1
-	for page <= 100 { // safety limit
-		out, err := c.GetPlans(accountName, application, planType, cloudProviderID, tier, page)
-		if err != nil {
-			// Some backends report a "count" that doesn't match the number of
-			// unique plans, which can push us to request a page past the end.
-			var httpErr *HTTPStatusError
-			if page > 1 && errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusNotFound {
-				break
-			}
-			return nil, err
-		}
-		total = int(out.Count)
-		fetched += len(out.Results)
+	out, err := c.GetPlans(accountName, application, planType, cloudProviderID, tier, 0)
+	if err != nil {
+		return nil, err
+	}
+	for pages := 0; ; pages++ {
 		for _, p := range out.Results {
 			key := p.Plan
 			if key == "" {
@@ -383,10 +377,16 @@ func (c *Client) GetAllPlans(accountName, application, planType, cloudProviderID
 				allResults = append(allResults, p)
 			}
 		}
-		if len(out.Results) == 0 || out.Next == "" || (total > 0 && fetched >= total) {
+		// "next" is the authoritative continuation signal — follow the URL
+		// the API gives us verbatim instead of re-deriving a page number, and
+		// never let "count" (which can be stale/inconsistent) cut this short.
+		if len(out.Results) == 0 || out.Next == "" || pages >= 100 { // safety limit
 			break
 		}
-		page++
+		out, err = c.fetchPlansPage(out.Next)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &PlansList{
 		Count:   int32(len(allResults)),
